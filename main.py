@@ -157,9 +157,12 @@ async def end_of_diolog(alice_request):
     await dp.storage.set_state(user_id, find.END)
     return "Вам бы хотелось о чем-нибудь ещё узнать? Я могу рассказать про погоду, достопримечательности и местную кухню. Также я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране)."
 
-@dp.request_handler(state=find.END)
+@dp.request_handler(state=find.END, commands=['да', 'нет', 'не', 'неа', 'ага'])
 async def end_diolog(alice_request):
-    return alice_request.response("НУ ТОГДА ПОШЕЛ ОТСЮДА, ЭТО КОНЕЧНЫЙ ДИАЛОГ")
+    if alice_request.request.command == 'да' or alice_request.request.command == 'ага':
+        return alice_request.response("Это прекрасно, вот только пошел отсюда, я еще не умею это делать")
+    else:
+        return alice_request.response("Ну тогда была рада помочь, обращайтесь")
 
 @dp.request_handler(func=lambda areq: areq.session.new)
 async def handle_new_session(alice_request):
