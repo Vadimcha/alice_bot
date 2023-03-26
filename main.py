@@ -31,13 +31,10 @@ async def main(alice_request):
         await dp.storage.update_data(user_id, GEO=geo_point)
     except:
         return alice_request.response("Так куда вы хотите?")
-    if alice_request.request.nlu.entities[1].type == "YANDEX.NUMBER":
-        try:
-            time = alice_request.request.nlu.entities[2].value
-            await dp.storage.update_data(user_id, TIME=time)
-        except IndexError:
-            return alice_request.response("Так когда вы хотите?")
-    else:
+    try:
+        time = list(filter(lambda type: type['type'] == 'YANDEX.DATETIME', alice_request.request._raw_kwargs["nlu"]["entities"]))[0]["value"]
+        await dp.storage.update_data(user_id, TIME=time)
+    except IndexError:
         return alice_request.response("Так когда вы хотите?")
     await dp.storage.set_state(user_id, how.BILETS)
     return alice_request.response("А билеты есть?", buttons=but)
