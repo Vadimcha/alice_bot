@@ -1,6 +1,7 @@
 from imports import *
 from pars_hotels import get_prices
-from get_tikcets import get_tikcets
+from get_tikcets import get_tikсets
+from get_places import get_places
 
 class how(Helper):
     mode = HelperMode.snake_case
@@ -196,56 +197,70 @@ async def branch_def(alice_request):
 
 @dp.request_handler(state=find.APARTAMENTS, comands=answers_to_type)
 async def get_apartamets(alice_request):
-    print("ABOBA")
     user_id = alice_request.session.user_id
     t = await dp.storage.get_data(user_id)
     TO = t['GEO']["city"]
 
     if alice_request.request.command in negative:
-        return alice_request.response(end_of_diolog())
+        return alice_request.response(end_of_diolog(alice_request))
     elif "отел" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'hotel', 'отели'))
+        return alice_request.response(await get_prices(TO, 'hotel', 'отели') + await end_of_diolog(alice_request))
     elif "хостел" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'hostel', 'хостелы'))
+        return alice_request.response(await get_prices(TO, 'hostel', 'хостелы') + await end_of_diolog(alice_request))
     elif "апарт" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'apart', 'апартаменты'))
+        return alice_request.response(await get_prices(TO, 'apart', 'апартаменты') + await end_of_diolog(alice_request))
     elif "дом" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'guesthouse', 'номер в гостевом доме'))
+        return alice_request.response(await get_prices(TO, 'guesthouse', 'номер в гостевом доме') + await end_of_diolog(alice_request))
     elif "кемпинг" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'camping', 'кемпинг'))
-
-@dp.request_handler(state=find.TICKETS)
-async def get_tickets(alice_request):
-
-    user_id = alice_request.session.user_id
-    FROM = alice_request.request.nlu.entities[0].value
-
-    t = await dp.storage.get_data(user_id)
-    text,button = await get_tikcets(t,FROM.city)
-    return alice_request.response(text,buttons=[button])
-    # return alice_request.response(f"Он хочет уехать из {FROM.city} {t['TIME']['day']}.{t['TIME']['month']}.{(t['TIME']['year'] if 'year' in t['TIME'] else '2023')} в {t['GEO']['city']}")
-
+        return alice_request.response(await get_prices(TO, 'camping', 'кемпинг') + await end_of_diolog(alice_request))
 
 async def end_of_diolog(alice_request):
+    print("ABOBA1")
     user_id = alice_request.session.user_id
     await dp.storage.set_state(user_id, find.END)
-    return "Вам бы хотелось о чем-нибудь ещё узнать? Я могу рассказать про погоду, достопримечательности и местную кухню. Также я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране)."
+    return "\n\nВам бы хотелось узнать еще что-то про погоду, местную кухню или интересные места. Я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране)."
 
-@dp.request_handler(state=find.END, commands=answers)
+@dp.request_handler(state=find.END,request_type=types.RequestType.BUTTON_PRESSED)
+async def return_again(alice_request):
+    return alice_request.response(await end_of_diolog(alice_request))
+@dp.request_handler(state=find.END)
 async def end_diolog(alice_request):
-    if alice_request.request.command in positive:
-        return alice_request.response("Это прекрасно, вот только пошел отсюда, я еще не умею это делать")
-    else:
+    print("ABOBA2")
+    user_id = alice_request.session.user_id
+    t = await dp.storage.get_data(user_id)
+    TO = t['GEO']["city"]
+    if alice_request.request.command in negative:
         return alice_request.response("Ну тогда была рада помочь, обращайтесь")
+    else:
+        if 'погод' in alice_request.request.original_utterance:
+            return alice_request.response("Да погода такая себе, сиди дома убобус" + await end_of_diolog(alice_request))
+        elif 'интерес' in alice_request.request.original_utterance or 'мест' in alice_request.request.original_utterance:
+            print("ABOBA3")
+            return alice_request.response(await get_places(TO) + await end_of_diolog(alice_request))
 
 @dp.request_handler(func=lambda areq: areq.session.new)
 async def handle_new_session(alice_request):
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id)
     logging.info(f'Initialized suggests for new session!\nuser_id is {user_id!r}')
-
     await dp.storage.set_state(user_id, how.GEO)
     return alice_request.response('Давайте. Когда и куда вы хотите отправиться?')
+
+@dp.request_handler(state=find.TICKETS, func=lambda areq: areq.request.nlu.entities[0].type == "YANDEX.GEO")
+async def get_tickets(alice_request):
+
+    user_id = alice_request.session.user_id
+    FROM = alice_request.request.nlu.entities[0].value
+
+    t = await dp.storage.get_data(user_id)
+    answer = await get_tikсets(t, FROM.city)
+    try:
+        text, button = answer
+        return alice_request.response(text + await end_of_diolog(alice_request), buttons=[button])
+    except:
+        text = answer
+        return alice_request.response(text + await end_of_diolog(alice_request))
+    # return alice_request.response(f"Он хочет уехать из {FROM.city} {t['TIME']['day']}.{t['TIME']['month']}.{(t['TIME']['year'] if 'year' in t['TIME'] else '2023')} в {t['GEO']['city']}")
 
 
 # @dp.request_handler()
