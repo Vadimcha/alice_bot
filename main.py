@@ -1,5 +1,6 @@
 from imports import *
 from pars_hotels import get_prices
+from get_tikcets import get_tikcets
 
 class how(Helper):
     mode = HelperMode.snake_case
@@ -70,12 +71,13 @@ answers_to_type = negative + type_of_housing
 async def main(alice_request):
     user_id = alice_request.session.user_id
     try:
-        geo_point = alice_request.request.nlu.entities[0].value
+        geo_point = alice_request.request._raw_kwargs["nlu"]["entities"][0]["value"]
         await dp.storage.update_data(user_id, GEO=geo_point)
     except:
         return alice_request.response("Так куда вы хотите?")
     try:
         time = list(filter(lambda type: type['type'] == 'YANDEX.DATETIME', alice_request.request._raw_kwargs["nlu"]["entities"]))[0]["value"]
+        time["year"] = datetime.now().strftime("%Y")
         if "через" in alice_request.request.original_utterance:
             now = datetime.now()
             if 'day' in time:
@@ -197,7 +199,7 @@ async def get_apartamets(alice_request):
     print("ABOBA")
     user_id = alice_request.session.user_id
     t = await dp.storage.get_data(user_id)
-    TO = t['GEO'].city
+    TO = t['GEO']["city"]
 
     if alice_request.request.command in negative:
         return alice_request.response(end_of_diolog())
@@ -219,7 +221,9 @@ async def get_tickets(alice_request):
     FROM = alice_request.request.nlu.entities[0].value
 
     t = await dp.storage.get_data(user_id)
-    return alice_request.response(f"Он хочет уехать из {FROM.city} {t['TIME']['day']}.{t['TIME']['month']}.{(t['TIME']['year'] if 'year' in t['TIME'] else '23')} в {t['GEO'].city}")
+    text,button = await get_tikcets(t,FROM.city)
+    return alice_request.response(text,buttons=[button])
+    # return alice_request.response(f"Он хочет уехать из {FROM.city} {t['TIME']['day']}.{t['TIME']['month']}.{(t['TIME']['year'] if 'year' in t['TIME'] else '2023')} в {t['GEO']['city']}")
 
 
 async def end_of_diolog(alice_request):
