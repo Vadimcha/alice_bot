@@ -214,15 +214,29 @@ async def get_apartamets(alice_request):
     elif "кемпинг" in alice_request.request.command:
         return alice_request.response(await get_prices(TO, 'camping', 'кемпинг'))
 
-@dp.request_handler(state=find.TICKETS)
+@dp.request_handler(func=lambda areq: areq.session.new)
+async def handle_new_session(alice_request):
+    user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id)
+    logging.info(f'Initialized suggests for new session!\nuser_id is {user_id!r}')
+    await dp.storage.set_state(user_id, how.GEO)
+    return alice_request.response('Давайте. Когда и куда вы хотите отправиться?')
+
+@dp.request_handler(state=find.TICKETS, func=lambda areq: areq.request.nlu.entities[0].type == "YANDEX.GEO")
 async def get_tickets(alice_request):
 
     user_id = alice_request.session.user_id
     FROM = alice_request.request.nlu.entities[0].value
 
     t = await dp.storage.get_data(user_id)
-    text,button = await get_tikcets(t,FROM.city)
-    return alice_request.response(text,buttons=[button])
+    answer = await get_tikcets(t,FROM.city)
+
+    try:
+        text,button = answer
+        return alice_request.response(text,buttons=[button])
+    except:
+        text = answer
+        return alice_request.response(text)
     # return alice_request.response(f"Он хочет уехать из {FROM.city} {t['TIME']['day']}.{t['TIME']['month']}.{(t['TIME']['year'] if 'year' in t['TIME'] else '2023')} в {t['GEO']['city']}")
 
 
@@ -238,13 +252,7 @@ async def end_diolog(alice_request):
     else:
         return alice_request.response("Ну тогда была рада помочь, обращайтесь")
 
-@dp.request_handler(func=lambda areq: areq.session.new)
-async def handle_new_session(alice_request):
-    user_id = alice_request.session.user_id
-    await dp.storage.update_data(user_id)
-    logging.info(f'Initialized suggests for new session!\nuser_id is {user_id!r}')
-    await dp.storage.set_state(user_id, how.GEO)
-    return alice_request.response('Давайте. Когда и куда вы хотите отправиться?')
+
 
 
 # @dp.request_handler()
