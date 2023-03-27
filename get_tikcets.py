@@ -20,7 +20,7 @@ async def get_tikcets(data, city):
         but = types.Button("билетик", url=pyshorteners.Shortener().tinyurl.short('aviasales.ru'+response['link']))
         return f"Я нашел билет на {response['departure_at'][0:10]} в {response['departure_at'][11:19]} GMT{response['departure_at'][20:25]}\nза {response['price']} можетe посмотреть сами кликнув по кнопке\n",but
     except IndexError:
-        return "Не получилось найти билеты для вас",[]
+        return "Не получилось найти билеты для вас"
     except Exception as e:
         print(e)
-        return "что то пошло не так",[]
+        return "что то пошло не так"
