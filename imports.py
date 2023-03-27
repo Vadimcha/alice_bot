@@ -1,6 +1,5 @@
 import random
 import logging
-from datetime import timedelta, datetimesr
 
 from aiohttp import web
 from aioalice import Dispatcher, get_new_configured_app, types
