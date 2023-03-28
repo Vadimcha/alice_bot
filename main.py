@@ -2,7 +2,7 @@ from imports import *
 from pars_hotels import get_prices
 from get_tikcets import get_tikсets
 from get_places import get_places
-
+from weather_with_chatgpt import weather, places
 class how(Helper):
     mode = HelperMode.snake_case
     GEO = Item()
@@ -20,6 +20,7 @@ class find(Helper):
     APARTAMENTS = Item()
     TICKETS = Item()
     END = Item()
+
 
 THIMBLE = '⚫'
 but = [types.Button("Да", payload=True), types.Button("Нет", payload=False)]
@@ -103,8 +104,18 @@ async def main(alice_request):
     except IndexError:
         return alice_request.response("Так когда вы хотите?")
     await dp.storage.set_state(user_id, how.BILETS)
+    data = await dp.storage.get_data(user_id)
+    q1 = queue.Queue()
+    event1 = Event()
+    q2 = queue.Queue()
+    event2 = Event()
+    t1 = Thread(target=weather,args=[data,event1,q1])
+    t1.start()
+    t2 = Thread(target=places,args=[data,event2,q2])
+    t2.start()
+    await dp.storage.update_data(user_id, threads=[[event1,q1],[event2,q2]])
+    # task1 = asyncio.ensure_future(weather(dp,user_id))
     return alice_request.response("А билеты есть?", buttons=but)
-
 
 @dp.request_handler(state=how.BILETS, request_type=types.RequestType.BUTTON_PRESSED)
 async def Bilets(alice_request):
@@ -135,9 +146,28 @@ async def Sleep(alice_request):
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, SLEEP=alice_request.request.payload)
     await dp.storage.reset_state(user_id)
-    await dp.storage.set_state(user_id, find.TRIP)
+    # await dp.storage.set_state(user_id, find.TRIP)
     data = await dp.storage.get_data(user_id)
-    return alice_request.response("ок.")
+    ticket = data["BILETS"]
+    hostel = data["SLEEP"]
+    if ticket and hostel:
+        print("END")
+        return alice_request.response(await end_of_diolog(alice_request))
+
+    elif ticket and not hostel:
+        print("SECOND BRANCH")
+        await dp.storage.set_state(user_id, find.BRANCH_2)
+        return alice_request.response("Вам помочь найти жильё?")
+
+    elif not ticket and hostel:
+        print("THIRD BRANCH")
+        await dp.storage.set_state(user_id, find.BRANCH_3)
+        return alice_request.response("Вам помочь найти билеты?")
+
+    else:
+        print("FIRST BRANCH")
+        await dp.storage.set_state(user_id, find.BRANCH_1)
+        return alice_request.response("Вам помочь найти билеты и жильё?")
 
 
 @dp.request_handler(state=how.SLEEP, commands=answers)  # Тут тоже самое
@@ -172,15 +202,21 @@ async def Sleep(alice_request):
         await dp.storage.set_state(user_id, find.BRANCH_1)
         return alice_request.response("Вам помочь найти билеты и жильё?")
 
-    #return alice_request.response("")
-
 @dp.request_handler(state=how.SLEEP)
 async def Sleep(alice_request):
     return alice_request.response("Я не совсем поняла ваш ответ, повторите ещё раз.")
 
+@dp.request_handler(state=find.BRANCH_1, commands=answers)
+async def branch_def(alice_request):
+    user_id = alice_request.session.user_id
+    if alice_request.request.command in negative:
+        return alice_request.response(await end_of_diolog(alice_request))
+    await dp.storage.update_data(user_id, get_both=True)
+    await dp.storage.set_state(user_id, find.APARTAMENTS)
+    return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга")
 
 @dp.request_handler(state=find.BRANCH_2, commands=answers)
-async def branch_def(alice_request):
+async def hotel(alice_request):
     user_id = alice_request.session.user_id
     if alice_request.request.command in negative:
         return alice_request.response(await end_of_diolog(alice_request))
@@ -188,7 +224,7 @@ async def branch_def(alice_request):
     return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга")
 
 @dp.request_handler(state=find.BRANCH_3, commands=answers)
-async def branch_def(alice_request):
+async def from_where(alice_request):
     user_id = alice_request.session.user_id
     if alice_request.request.command in negative:
         return alice_request.response(await end_of_diolog(alice_request))
@@ -200,19 +236,37 @@ async def get_apartamets(alice_request):
     user_id = alice_request.session.user_id
     t = await dp.storage.get_data(user_id)
     TO = t['GEO']["city"]
-
-    if alice_request.request.command in negative:
-        return alice_request.response(end_of_diolog(alice_request))
-    elif "отел" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'hotel', 'отели') + await end_of_diolog(alice_request))
-    elif "хостел" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'hostel', 'хостелы') + await end_of_diolog(alice_request))
-    elif "апарт" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'apart', 'апартаменты') + await end_of_diolog(alice_request))
-    elif "дом" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'guesthouse', 'номер в гостевом доме') + await end_of_diolog(alice_request))
-    elif "кемпинг" in alice_request.request.command:
-        return alice_request.response(await get_prices(TO, 'camping', 'кемпинг') + await end_of_diolog(alice_request))
+    if not t["get_both"]:
+        if alice_request.request.command in negative:
+            return alice_request.response(end_of_diolog(alice_request))
+        elif "отел" in alice_request.request.command:
+            return alice_request.response(await get_prices(TO, 'hotel', 'отели') + await end_of_diolog(alice_request))
+        elif "хостел" in alice_request.request.command:
+            return alice_request.response(await get_prices(TO, 'hostel', 'хостелы') + await end_of_diolog(alice_request))
+        elif "апарт" in alice_request.request.command:
+            return alice_request.response(await get_prices(TO, 'apart', 'апартаменты') + await end_of_diolog(alice_request))
+        elif "дом" in alice_request.request.command:
+            return alice_request.response(await get_prices(TO, 'guesthouse', 'номер в гостевом доме') + await end_of_diolog(alice_request))
+        elif "кемпинг" in alice_request.request.command:
+            return alice_request.response(await get_prices(TO, 'camping', 'кемпинг') + await end_of_diolog(alice_request))
+    else:
+        if alice_request.request.command in negative:
+            return alice_request.response(end_of_diolog(alice_request))
+        elif "отел" in alice_request.request.command:
+            await dp.storage.set_state(user_id, find.TICKETS)
+            return alice_request.response(await get_prices(TO, 'hotel', 'отели') + "\nОткуда вы поедете")
+        elif "хостел" in alice_request.request.command:
+            await dp.storage.set_state(user_id, find.TICKETS)
+            return alice_request.response(await get_prices(TO, 'hostel', 'хостелы') + "\nОткуда вы поедете")
+        elif "апарт" in alice_request.request.command:
+            await dp.storage.set_state(user_id, find.TICKETS)
+            return alice_request.response(await get_prices(TO, 'apart', 'апартаменты') + "\nОткуда вы поедете")
+        elif "дом" in alice_request.request.command:
+            await dp.storage.set_state(user_id, find.TICKETS)
+            return alice_request.response(await get_prices(TO, 'guesthouse', 'номер в гостевом доме') + "\nОткуда вы поедете")
+        elif "кемпинг" in alice_request.request.command:
+            await dp.storage.set_state(user_id, find.TICKETS)
+            return alice_request.response(await get_prices(TO, 'camping', 'кемпинг') + "\nОткуда вы поедете")
 
 async def end_of_diolog(alice_request):
     print("ABOBA1")
@@ -220,20 +274,23 @@ async def end_of_diolog(alice_request):
     await dp.storage.set_state(user_id, find.END)
     return "\n\nВам бы хотелось узнать еще что-то про погоду, местную кухню или интересные места. Я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране)."
 
-@dp.request_handler(state=find.END,request_type=types.RequestType.BUTTON_PRESSED)
+@dp.request_handler(state=find.END,commands=["билетик"])
 async def return_again(alice_request):
-    return alice_request.response(await end_of_diolog(alice_request))
+    return alice_request.response("\n\nВам бы хотелось узнать еще что-то про погоду, местную кухню или интересные места. Я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране).")
+
 @dp.request_handler(state=find.END)
 async def end_diolog(alice_request):
     print("ABOBA2")
     user_id = alice_request.session.user_id
+    
     t = await dp.storage.get_data(user_id)
     TO = t['GEO']["city"]
     if alice_request.request.command in negative:
         return alice_request.response("Ну тогда была рада помочь, обращайтесь")
     else:
         if 'погод' in alice_request.request.original_utterance:
-            return alice_request.response("Да погода такая себе, сиди дома убобус" + await end_of_diolog(alice_request))
+            t["threads"][0][0].wait()
+            return alice_request.response(t['threads'][0][1].get() + await end_of_diolog(alice_request))
         elif 'интерес' in alice_request.request.original_utterance or 'мест' in alice_request.request.original_utterance:
             print("ABOBA3")
             return alice_request.response(await get_places(TO) + await end_of_diolog(alice_request))
@@ -263,9 +320,9 @@ async def get_tickets(alice_request):
     # return alice_request.response(f"Он хочет уехать из {FROM.city} {t['TIME']['day']}.{t['TIME']['month']}.{(t['TIME']['year'] if 'year' in t['TIME'] else '2023')} в {t['GEO']['city']}")
 
 
-# @dp.request_handler()
-# async def main(alice_request):
-#     return alice_request.response()
+@dp.request_handler(commands=["я передумал","заверши"])
+async def exit(alice_request):
+    return alice_request.response()
 
 if __name__ == '__main__':
     app = get_new_configured_app(dispatcher=dp, path=WEBHOOK_URL_PATH)

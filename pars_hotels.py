@@ -1,7 +1,7 @@
 from imports import *
 import requests
 from bs4 import BeautifulSoup as bs
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 import pymorphy2
 import pyshorteners
 
@@ -13,7 +13,8 @@ async def get_prices(location = "москва", tip = 'guesthouse', j = 'хос�
     translator = Translator()
 
     lower = 1
-    location_en = translator.translate(location, src='ru', dest='en').text.lower()
+    # location_en = translator.translate(location, src='ru', dest='en').text.lower()
+    location_en = GoogleTranslator(source='ru', target='en').translate(location).lower()
 
 
     URL_TEMPLAT = "https://ostrovok.ru/hotel/russia/" + \

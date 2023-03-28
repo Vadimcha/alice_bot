@@ -1,13 +1,15 @@
 from imports import *
 import requests
 from bs4 import BeautifulSoup as bs
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 import pymorphy2
 import pyshorteners
 
 async def get_places(location = "москва"):
     translator = Translator()
-    location = translator.translate(location, src='ru', dest='en').text.lower()
+    location = GoogleTranslator(source='ru', target='en').translate(location).lower()
+    print(location)
+    # location = translator.translate(location, src='ru', dest='en').text.lower()
 
     URL_TEMPLAT = "https://experience.tripster.ru/experience/"+location
     r = requests.get(URL_TEMPLAT)

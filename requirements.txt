@@ -1,0 +1,9 @@
+emit
+aiohttp
+datetime
+aioalice
+openai
+deep_translator
+bs4
+pymorphy2
+pyshorteners
