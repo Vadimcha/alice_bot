@@ -16,6 +16,7 @@ class how(Helper):
 
 
 class find(Helper):
+
     mode = HelperMode.snake_case
     TRIP = Item()
     BRANCH_1 = Item()
@@ -25,6 +26,9 @@ class find(Helper):
     TICKETS = Item()
     HELP = Item()
     END = Item()
+
+    def reset_help(self):
+        self.HELP = Item()
 
 
 THIMBLE = '⚫'
@@ -78,6 +82,8 @@ help = [
     'что ты можешь',
 ]
 
+
+
 answers_to_type = negative + type_of_housing
 
 have_tickets = ["А билеты есть?", "У вас уже есть билеты?", "Вы уже приобрели себе билеты?"]
@@ -85,8 +91,32 @@ have_housing = ["А жильё есть?", "У вас уже есть жильё
 help_with_housing = ["Вам помочь с жильём?", "Вам помочь найти жильё?", "Вам помочь с выбором жилья?"]
 help_with_tickets = ["Вам помочь с билетами?", "Вам помочь найти билеты?", "Вам помочь с выбором билетов?"]
 help_with_housing_and_tickets = ["Вам почь с билетами и жильём", "Вам помочь найти билеты и жильё?", "Вам помочь с выбором жилья и билетов?"]
-help_text = "Я могу сориентировать вас по ценам на билеты и жильё. Также я могу рассказать много интересного про страну: различные факты, прогноз погоды, какие места стоит посетить и какую еду попробовать. Помимо этого, я могу подсказать, что нужно с собой взять. Продолжайте работать"
+help_text = "Я могу сориентировать вас по ценам на билеты и жильё. Также я могу рассказать много интересного про страну: различные факты, прогноз погоды, какие места стоит посетить и какую еду попробовать. Помимо этого, я могу подсказать, что нужно с собой взять. \n \nЧтобы продолжить работать ответьте на предыдущий вопрос"
+@dp.request_handler(state=find.TICKETS, commands=help)
+@dp.request_handler(state=how.GEO, commands=help)
+@dp.request_handler(state=how.BILETS, commands=help)
+@dp.request_handler(state=how.SLEEP, commands=help)
+@dp.request_handler(state=find.BRANCH_1, commands=help)
+@dp.request_handler(state=find.BRANCH_2, commands=help)
+@dp.request_handler(state=find.BRANCH_3, commands=help)
+@dp.request_handler(state=find.END, commands=help)
+@dp.request_handler(state=find.APARTAMENTS, commands=help)
+async def help(alice_request):
+    user_id = alice_request.session.user_id
+    return alice_request.response(help_text)
 
+
+@dp.request_handler(state=find.TICKETS, commands=["Начать заново", "заново", "повторить"])
+@dp.request_handler(state=how.GEO, commands=["Начать заново", "заново", "повторить"])
+@dp.request_handler(state=how.BILETS, commands=["Начать заново", "заново", "повторить"])
+@dp.request_handler(state=how.SLEEP, commands=["Начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.BRANCH_1, commands=["Начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.BRANCH_2, commands=["Начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.BRANCH_3, commands=["Начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.END, commands=["Начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.APARTAMENTS, commands=["Начать заново", "заново", "повторить"])
+async def repeat(alice_request):
+    return alice_request.response("Перезапустите навык в Алисе", end_session=True)
 
 @dp.request_handler(state=how.GEO)
 async def main(alice_request):
@@ -346,7 +376,8 @@ async def handle_new_session(alice_request):
     await dp.storage.update_data(user_id)
     logging.info(f'Initialized suggests for new session!\nuser_id is {user_id!r}')
     await dp.storage.set_state(user_id, how.GEO)
-    return alice_request.response('Давайте. Когда и куда вы хотите отправиться?',tts='Давайте. Когда и куда вы хотите отправиться?')
+    print("BOBA")
+    return alice_request.response('Здравствуйте, вас приветствует навык Волшебный чемоданчик, вы в любой момент можете сказать "Что ты умеешь", чтобы узнать весь функционал этого навыка или сказать "Начать заново", чтоюы начать заново в случае ошибки. \nТак куда и когда вы желаете поехать?', tts='Здравствуйте, вас приветствует навык Волшебный чемоданчик, вы в любой момент можете сказать "Что ты умеешь", чтобы узнать весь функционал этого навыка. \nТак куда и когда вы желаете поехать?')
 
 
 @dp.request_handler(state=find.TICKETS)
