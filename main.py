@@ -2,7 +2,7 @@ from imports import *
 from pars_hotels import get_prices
 from get_tikcets import get_tikсets
 from get_places import get_places
-from weather_with_chatgpt import weather, local_food
+from weather_with_chatgpt import weather, local_food, facts
 class how(Helper):
     mode = HelperMode.snake_case
     GEO = Item()
@@ -109,11 +109,15 @@ async def main(alice_request):
     event1 = Event()
     q2 = queue.Queue()
     event2 = Event()
+    q3 = queue.Queue()
+    event3 = Event()
     t1 = Thread(target=weather,args=[data,event1,q1])
     t1.start()
     t2 = Thread(target=local_food,args=[data,event2,q2])
     t2.start()
-    await dp.storage.update_data(user_id, threads=[[event1,q1],[event2,q2]])
+    t3 = Thread(target=facts, args=[data, event3, q3])
+    t3.start()
+    await dp.storage.update_data(user_id, threads=[[event1,q1],[event2,q2],[event3,q3]])
     # task1 = asyncio.ensure_future(weather(dp,user_id))
     return alice_request.response("А билеты есть?", buttons=but)
 
@@ -294,12 +298,15 @@ async def end_diolog(alice_request):
         if 'погод' in alice_request.request.original_utterance:
             t["threads"][0][0].wait()
             return alice_request.response(t['threads'][0][1].get() + await end_of_diolog(alice_request))
-        elif 'интерес' in alice_request.request.original_utterance or 'места' in alice_request.request.original_utterance:
+        elif 'места' in alice_request.request.original_utterance:
             print("ABOBA3")
             return alice_request.response(await get_places(TO) + await end_of_diolog(alice_request))
         elif 'кухн' in alice_request.request.original_utterance or 'ед' in alice_request.request.original_utterance or 'местн' in alice_request.request.original_utterance:
             t["threads"][1][0].wait()
             return alice_request.response(t['threads'][1][1].get() + await end_of_diolog(alice_request))
+        elif 'факт' in alice_request.request.original_utterance:
+            t["threads"][2][0].wait()
+            return alice_request.response(t['threads'][2][1].get() + await end_of_diolog(alice_request))
         # t["threads"][1][0].wait()
         # t['threads'][1][1].get()
 
