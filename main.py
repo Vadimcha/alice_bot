@@ -139,7 +139,8 @@ async def main(alice_request):
     t3.start()
     await dp.storage.update_data(user_id, threads=[[event1,q1],[event2,q2],[event3,q3]])
     # task1 = asyncio.ensure_future(weather(dp,user_id))
-    return alice_request.response(random.choice(have_tickets), buttons=but)
+    text = random.choice(have_tickets)
+    return alice_request.response(text, buttons=but, tts=text)
 
 @dp.request_handler(state=how.BILETS, request_type=types.RequestType.BUTTON_PRESSED)
 async def Bilets(alice_request):
@@ -323,11 +324,12 @@ async def end_diolog(alice_request):
     t = await dp.storage.get_data(user_id)
     TO = t['GEO']["city"]
     if alice_request.request.command in negative:
-        return alice_request.response("Ну тогда была рада помочь, обращайтесь",tts="Ну тогда была рада помочь, обращайтесь")
+        await dp.storage.reset_state(user_id,with_data=True)
+        return alice_request.response("Ну тогда была рада помочь, обращайтесь",tts="Ну тогда была рада помочь, обращайтесь",end_session=True)
     else:
         if 'погод' in alice_request.request.original_utterance:
             t["threads"][0][0].wait()
-            return alice_request.response(t['threads'][0][1].get() + await end_of_diolog(alice_request),tts=t['threads'][0][1].get() + await end_of_diolog(alice_request))
+            return alice_request.response(t['threads'][0][1].get() + await end_of_diolog(alice_request))
         elif 'места' in alice_request.request.original_utterance:
             print("ABOBA3")
             return alice_request.response(await get_places(TO) + await end_of_diolog(alice_request))

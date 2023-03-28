@@ -37,3 +37,21 @@ async def get_prices(location = "москва", tip = 'guesthouse', j = 'хос�
     s = pyshorteners.Shortener()
     short_url = s.tinyurl.short(URL_TEMPLAT)
     return "В " + gent + " цена за " + j + " варьируется от " + str(lowest_prices[0]) + " до " + str(lowest_prices[-1]) + " рублей за одну ночь для взрослого человека." + "\n" + "Вы можете сами посмотреть цены на сайте: " + short_url
+
+def get_api():
+
+    url = "https://hotels-com-free.p.rapidapi.com/suggest/v1.7/json"
+
+    querystring = {"query":"Moscow","locale":"ru_RU"}
+
+    headers = {
+	    "X-RapidAPI-Key": "6f8ac4212emshc1ddbc34e5076b6p19db1djsn068cc419ae36",
+	    "X-RapidAPI-Host": "hotels-com-free.p.rapidapi.com"
+    }
+
+    response = requests.request("GET", url, headers=headers, params=querystring)
+
+    print(response.text)
+
+if __name__ == "__main__":
+    get_api()
