@@ -1,3 +1,7 @@
+import random
+
+import dawg_python
+
 from imports import *
 from pars_hotels import get_prices
 from get_tikcets import get_tikсets
@@ -19,6 +23,7 @@ class find(Helper):
     BRANCH_3 = Item()
     APARTAMENTS = Item()
     TICKETS = Item()
+    HELP = Item()
     END = Item()
 
 
@@ -67,11 +72,26 @@ type_of_housing = [
     "кемпинг",
 ]
 
+help = [
+    'хелп',
+    'что ты умеешь',
+    'что ты можешь',
+]
+
 answers_to_type = negative + type_of_housing
+
+have_tickets = ["А билеты есть?", "У вас уже есть билеты?", "Вы уже приобрели себе билеты?"]
+have_housing = ["А жильё есть?", "У вас уже есть жильё?", "Вы уже забранировали сеье жильё?", "Вы уже знаете, где будете жить?"]
+help_with_housing = ["Вам помочь с жильём?", "Вам помочь найти жильё?", "Вам помочь с выбором жилья?"]
+help_with_tickets = ["Вам помочь с билетами?", "Вам помочь найти билеты?", "Вам помочь с выбором билетов?"]
+help_with_housing_and_tickets = ["Вам почь с билетами и жильём", "Вам помочь найти билеты и жильё?", "Вам помочь с выбором жилья и билетов?"]
+help_text = "Я могу сориентировать вас по ценам на билеты и жильё. Также я могу рассказать много интересного про страну: различные факты, прогноз погоды, какие места стоит посетить и какую еду попробовать. Помимо этого, я могу подсказать, что нужно с собой взять. Продолжайте работать"
+
 
 @dp.request_handler(state=how.GEO)
 async def main(alice_request):
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=how.GEO)
     try:
         geo_point = alice_request.request._raw_kwargs["nlu"]["entities"][0]["value"]
         await dp.storage.update_data(user_id, GEO=geo_point)
@@ -119,26 +139,28 @@ async def main(alice_request):
     t3.start()
     await dp.storage.update_data(user_id, threads=[[event1,q1],[event2,q2],[event3,q3]])
     # task1 = asyncio.ensure_future(weather(dp,user_id))
-    return alice_request.response("А билеты есть?", buttons=but)
+    return alice_request.response(random.choice(have_tickets), buttons=but)
 
 @dp.request_handler(state=how.BILETS, request_type=types.RequestType.BUTTON_PRESSED)
 async def Bilets(alice_request):
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=how.BILETS)
     await dp.storage.update_data(user_id, BILETS=alice_request.request.payload)
     await dp.storage.set_state(user_id, how.SLEEP)
-    return alice_request.response("А ночлег есть?", buttons=but)
+    return alice_request.response(random.choice(have_housing), buttons=but)
 
 
 @dp.request_handler(state=how.BILETS, commands=answers)
 async def Bilets(alice_request):
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=how.BILETS)
     if alice_request.request.command in negative:
         alice_request.request.command = False
     elif alice_request.request.command in positive:
         alice_request.request.command = True
     await dp.storage.update_data(user_id, BILETS=alice_request.request.command)
     await dp.storage.set_state(user_id, how.SLEEP)
-    return alice_request.response("А ночлег есть?", buttons=but)
+    return alice_request.response(random.choice(have_housing), buttons=but)
 
 # @dp.request_handler(state=how.BILETS)
 # async def Bilets(alice_request):
@@ -148,6 +170,7 @@ async def Bilets(alice_request):
 @dp.request_handler(state=how.SLEEP, request_type=types.RequestType.BUTTON_PRESSED)
 async def Sleep(alice_request):
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=how.SLEEP)
     await dp.storage.update_data(user_id, SLEEP=alice_request.request.payload)
     await dp.storage.reset_state(user_id)
     # await dp.storage.set_state(user_id, find.TRIP)
@@ -161,22 +184,23 @@ async def Sleep(alice_request):
     elif ticket and not hostel:
         print("SECOND BRANCH")
         await dp.storage.set_state(user_id, find.BRANCH_2)
-        return alice_request.response("Вам помочь найти жильё?")
+        return alice_request.response(random.choice(help_with_housing))
 
     elif not ticket and hostel:
         print("THIRD BRANCH")
         await dp.storage.set_state(user_id, find.BRANCH_3)
-        return alice_request.response("Вам помочь найти билеты?")
+        return alice_request.response(random.choice(help_with_tickets))
 
     else:
         print("FIRST BRANCH")
         await dp.storage.set_state(user_id, find.BRANCH_1)
-        return alice_request.response("Вам помочь найти билеты и жильё?")
+        return alice_request.response(random.choice(help_with_housing_and_tickets))
 
 
 @dp.request_handler(state=how.SLEEP, commands=answers)  # Тут тоже самое
 async def Sleep(alice_request):
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=how.SLEEP)
     if alice_request.request.command in negative:
         alice_request.request.command = False
     elif alice_request.request.command in positive:
@@ -194,17 +218,17 @@ async def Sleep(alice_request):
     elif ticket and not hostel:
         print("SECOND BRANCH")
         await dp.storage.set_state(user_id, find.BRANCH_2)
-        return alice_request.response("Вам помочь найти жильё?")
+        return alice_request.response(random.choice(help_with_housing))
 
     elif not ticket and hostel:
         print("THIRD BRANCH")
         await dp.storage.set_state(user_id, find.BRANCH_3)
-        return alice_request.response("Вам помочь найти билеты?")
+        return alice_request.response(random.choice(help_with_tickets))
 
     else:
         print("FIRST BRANCH")
         await dp.storage.set_state(user_id, find.BRANCH_1)
-        return alice_request.response("Вам помочь найти билеты и жильё?")
+        return alice_request.response(random.choice(help_with_housing_and_tickets))
 
 # @dp.request_handler(state=how.SLEEP)
 # async def Sleep(alice_request):
@@ -213,6 +237,7 @@ async def Sleep(alice_request):
 @dp.request_handler(state=find.BRANCH_1, commands=answers)
 async def branch_def(alice_request):
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=find.BRANCH_1)
     if alice_request.request.command in negative:
         return alice_request.response(await end_of_diolog(alice_request))
     await dp.storage.update_data(user_id, get_both=True)
@@ -222,6 +247,7 @@ async def branch_def(alice_request):
 @dp.request_handler(state=find.BRANCH_2, commands=answers)
 async def hotel(alice_request):
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=find.BRANCH_2)
     if alice_request.request.command in negative:
         return alice_request.response(await end_of_diolog(alice_request))
     await dp.storage.update_data(user_id, get_both=False)
@@ -232,6 +258,7 @@ async def hotel(alice_request):
 @dp.request_handler(state=find.BRANCH_3, commands=answers)
 async def from_where(alice_request):
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=find.BRANCH_3)
     if alice_request.request.command in negative:
         return alice_request.response(await end_of_diolog(alice_request))
     await dp.storage.set_state(user_id, find.TICKETS)
@@ -240,6 +267,7 @@ async def from_where(alice_request):
 @dp.request_handler(state=find.APARTAMENTS, comands=answers_to_type)
 async def get_apartamets(alice_request):
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=find.APARTAMENTS)
     t = await dp.storage.get_data(user_id)
     print(t)
     TO = t['GEO']["city"]
@@ -289,6 +317,7 @@ async def return_again(alice_request):
 async def end_diolog(alice_request):
     print("ABOBA2")
     user_id = alice_request.session.user_id
+    await dp.storage.update_data(user_id, state=find.END)
     
     t = await dp.storage.get_data(user_id)
     TO = t['GEO']["city"]
@@ -316,6 +345,7 @@ async def handle_new_session(alice_request):
     await dp.storage.update_data(user_id)
     logging.info(f'Initialized suggests for new session!\nuser_id is {user_id!r}')
     await dp.storage.set_state(user_id, how.GEO)
+    await dp.storage.set_state(user_id, find.HELP)
     return alice_request.response('Давайте. Когда и куда вы хотите отправиться?')
 
 
@@ -323,6 +353,7 @@ async def handle_new_session(alice_request):
 async def get_tickets(alice_request):
     if alice_request.request.nlu.entities[0].type == "YANDEX.GEO":
         user_id = alice_request.session.user_id
+        await dp.storage.update_data(user_id, state=find.TICKETS)
         FROM = alice_request.request.nlu.entities[0].value
 
         t = await dp.storage.get_data(user_id)

@@ -1,5 +1,6 @@
 import random
 import logging
+import random
 
 from aiohttp import web
 from aioalice import Dispatcher, get_new_configured_app, types
