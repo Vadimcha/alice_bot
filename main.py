@@ -96,7 +96,7 @@ async def main(alice_request):
         geo_point = alice_request.request._raw_kwargs["nlu"]["entities"][0]["value"]
         await dp.storage.update_data(user_id, GEO=geo_point)
     except:
-        return alice_request.response("Так куда вы хотите?")
+        return alice_request.response("Так куда вы хотите?",tts="Так куда вы хотите?")
     try:
         time = list(filter(lambda type: type['type'] == 'YANDEX.DATETIME', alice_request.request._raw_kwargs["nlu"]["entities"]))[0]["value"]
         time["year"] = datetime.now().strftime("%Y")
@@ -122,7 +122,7 @@ async def main(alice_request):
 
         await dp.storage.update_data(user_id, TIME=time)
     except IndexError:
-        return alice_request.response("Так когда вы хотите?")
+        return alice_request.response("Так когда вы хотите?", tts="Так когда вы хотите приехать?")
     await dp.storage.set_state(user_id, how.BILETS)
     data = await dp.storage.get_data(user_id)
     q1 = queue.Queue()
@@ -164,7 +164,7 @@ async def Bilets(alice_request):
 
 # @dp.request_handler(state=how.BILETS)
 # async def Bilets(alice_request):
-#     return alice_request.response("Я не совсем поняла ваш ответ, повторите ещё раз.")
+#     return alice_request.response("Я не совсем поняла ваш ответ, повторите ещё раз.",tts="Я не совсем поняла ваш ответ, повторите ещё раз.")
 
 
 @dp.request_handler(state=how.SLEEP, request_type=types.RequestType.BUTTON_PRESSED)
@@ -213,7 +213,8 @@ async def Sleep(alice_request):
     hostel = data["SLEEP"]
     if ticket and hostel:
         print("END")
-        return alice_request.response(await end_of_diolog(alice_request))
+        text = await end_of_diolog(alice_request)
+        return alice_request.response(text,tts=text)
 
     elif ticket and not hostel:
         print("SECOND BRANCH")
@@ -232,7 +233,7 @@ async def Sleep(alice_request):
 
 # @dp.request_handler(state=how.SLEEP)
 # async def Sleep(alice_request):
-#     return alice_request.response("Я не совсем поняла ваш ответ, повторите ещё раз.")
+#     return alice_request.response("Я не совсем поняла ваш ответ, повторите ещё раз.", tts="Я не совсем поняла ваш ответ, повторите ещё раз.")
 
 @dp.request_handler(state=find.BRANCH_1, commands=answers)
 async def branch_def(alice_request):
@@ -242,7 +243,7 @@ async def branch_def(alice_request):
         return alice_request.response(await end_of_diolog(alice_request))
     await dp.storage.update_data(user_id, get_both=True)
     await dp.storage.set_state(user_id, find.APARTAMENTS)
-    return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга")
+    return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга",tts="Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга")
 
 @dp.request_handler(state=find.BRANCH_2, commands=answers)
 async def hotel(alice_request):
@@ -253,7 +254,7 @@ async def hotel(alice_request):
     await dp.storage.update_data(user_id, get_both=False)
 
     await dp.storage.set_state(user_id, find.APARTAMENTS)
-    return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга")
+    return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга",tts="Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга")
 
 @dp.request_handler(state=find.BRANCH_3, commands=answers)
 async def from_where(alice_request):
@@ -262,7 +263,7 @@ async def from_where(alice_request):
     if alice_request.request.command in negative:
         return alice_request.response(await end_of_diolog(alice_request))
     await dp.storage.set_state(user_id, find.TICKETS)
-    return alice_request.response("Откуда вы поедете")
+    return alice_request.response("Откуда вы поедете?",tts="Откуда вы поедете?")
 
 @dp.request_handler(state=find.APARTAMENTS, comands=answers_to_type)
 async def get_apartamets(alice_request):
@@ -311,22 +312,22 @@ async def end_of_diolog(alice_request):
 
 @dp.request_handler(state=find.END,commands=["билетик"])
 async def return_again(alice_request):
-    return alice_request.response("\n\nВам бы хотелось узнать еще что-то про погоду, местную кухню или интересные места. Я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране).")
+    return alice_request.response("\n\nВам бы хотелось узнать еще что-то про погоду, местную кухню или интересные места. Я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране).", tts="Вам бы хотелось узнать еще что-то про погоду, местную кухню или интересные места. Я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране).")
 
 @dp.request_handler(state=find.END)
 async def end_diolog(alice_request):
     print("ABOBA2")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=find.END)
-    
+
     t = await dp.storage.get_data(user_id)
     TO = t['GEO']["city"]
     if alice_request.request.command in negative:
-        return alice_request.response("Ну тогда была рада помочь, обращайтесь")
+        return alice_request.response("Ну тогда была рада помочь, обращайтесь",tts="Ну тогда была рада помочь, обращайтесь")
     else:
         if 'погод' in alice_request.request.original_utterance:
             t["threads"][0][0].wait()
-            return alice_request.response(t['threads'][0][1].get() + await end_of_diolog(alice_request))
+            return alice_request.response(t['threads'][0][1].get() + await end_of_diolog(alice_request),tts=t['threads'][0][1].get() + await end_of_diolog(alice_request))
         elif 'места' in alice_request.request.original_utterance:
             print("ABOBA3")
             return alice_request.response(await get_places(TO) + await end_of_diolog(alice_request))
@@ -345,8 +346,7 @@ async def handle_new_session(alice_request):
     await dp.storage.update_data(user_id)
     logging.info(f'Initialized suggests for new session!\nuser_id is {user_id!r}')
     await dp.storage.set_state(user_id, how.GEO)
-    await dp.storage.set_state(user_id, find.HELP)
-    return alice_request.response('Давайте. Когда и куда вы хотите отправиться?')
+    return alice_request.response('Давайте. Когда и куда вы хотите отправиться?',tts='Давайте. Когда и куда вы хотите отправиться?')
 
 
 @dp.request_handler(state=find.TICKETS)
