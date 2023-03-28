@@ -6,7 +6,6 @@ import pymorphy2
 import pyshorteners
 
 async def get_places(location = "москва"):
-    translator = Translator()
     location = GoogleTranslator(source='ru', target='en').translate(location).lower()
     print(location)
     # location = translator.translate(location, src='ru', dest='en').text.lower()

@@ -10,7 +10,6 @@ async def get_prices(location = "москва", tip = 'guesthouse', j = 'хос�
     morph = pymorphy2.MorphAnalyzer()
     butyavka = morph.parse(location)[0]
     gent = butyavka.inflect({'loct'}).word.capitalize()
-    translator = Translator()
 
     lower = 1
     # location_en = translator.translate(location, src='ru', dest='en').text.lower()
