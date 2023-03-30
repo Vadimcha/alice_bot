@@ -102,6 +102,7 @@ help_text = "Я могу сориентировать вас по ценам н�
 @dp.request_handler(state=find.END, commands=help)
 @dp.request_handler(state=find.APARTAMENTS, commands=help)
 async def help(alice_request):
+    print("Помощь")
     user_id = alice_request.session.user_id
     return alice_request.response(help_text)
 
@@ -116,10 +117,12 @@ async def help(alice_request):
 @dp.request_handler(state=find.END, commands=["Начать заново", "заново", "повторить"])
 @dp.request_handler(state=find.APARTAMENTS, commands=["Начать заново", "заново", "повторить"])
 async def repeat(alice_request):
+    print("Перезапуск")
     return alice_request.response("Перезапустите навык в Алисе", end_session=True)
 
 @dp.request_handler(state=how.GEO)
 async def main(alice_request):
+    print("Получение места и даты выезда")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=how.GEO)    
     try:
@@ -178,6 +181,8 @@ async def main(alice_request):
 
 @dp.request_handler(state=how.BILETS, request_type=types.RequestType.BUTTON_PRESSED)
 async def Bilets(alice_request):
+    print("Есть ли у пользователя билеты?")
+
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=how.BILETS)
     await dp.storage.update_data(user_id, BILETS=alice_request.request.payload)
@@ -187,6 +192,7 @@ async def Bilets(alice_request):
 
 @dp.request_handler(state=how.BILETS, commands=answers)
 async def Bilets(alice_request):
+    print("Есть ли у пользователя билеты?")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=how.BILETS)
     if alice_request.request.command in negative:
@@ -204,6 +210,7 @@ async def Bilets(alice_request):
 
 @dp.request_handler(state=how.SLEEP, request_type=types.RequestType.BUTTON_PRESSED)
 async def Sleep(alice_request):
+    print("Есть ли у пользователя жилье?")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=how.SLEEP)
     await dp.storage.update_data(user_id, SLEEP=alice_request.request.payload)
@@ -213,27 +220,24 @@ async def Sleep(alice_request):
     ticket = data["BILETS"]
     hostel = data["SLEEP"]
     if ticket and hostel:
-        print("END")
         return alice_request.response(await end_of_diolog(alice_request))
 
     elif ticket and not hostel:
-        print("SECOND BRANCH")
         await dp.storage.set_state(user_id, find.BRANCH_2)
         return alice_request.response(random.choice(help_with_housing))
 
     elif not ticket and hostel:
-        print("THIRD BRANCH")
         await dp.storage.set_state(user_id, find.BRANCH_3)
         return alice_request.response(random.choice(help_with_tickets))
 
     else:
-        print("FIRST BRANCH")
         await dp.storage.set_state(user_id, find.BRANCH_1)
         return alice_request.response(random.choice(help_with_housing_and_tickets))
 
 
 @dp.request_handler(state=how.SLEEP, commands=answers)  # Тут тоже самое
 async def Sleep(alice_request):
+    print("Есть ли у пользователя жилье?")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=how.SLEEP)
     if alice_request.request.command in negative:
@@ -272,6 +276,7 @@ async def Sleep(alice_request):
 
 @dp.request_handler(state=find.BRANCH_1, commands=answers)
 async def branch_def(alice_request):
+    print("Ветка, когда нет ничгео")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=find.BRANCH_1)
     if alice_request.request.command in negative:
@@ -282,6 +287,7 @@ async def branch_def(alice_request):
 
 @dp.request_handler(state=find.BRANCH_2, commands=answers)
 async def hotel(alice_request):
+    print("Ветка, когда у нас нет жилья")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=find.BRANCH_2)
     if alice_request.request.command in negative:
@@ -293,6 +299,7 @@ async def hotel(alice_request):
 
 @dp.request_handler(state=find.BRANCH_3, commands=answers)
 async def from_where(alice_request):
+    print("Ветка когда у нас нет билетов")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=find.BRANCH_3)
     if alice_request.request.command in negative:
@@ -302,6 +309,7 @@ async def from_where(alice_request):
 
 @dp.request_handler(state=find.APARTAMENTS, comands=answers_to_type)
 async def get_apartamets(alice_request):
+    print("Получение информации о жилье")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=find.APARTAMENTS)
     t = await dp.storage.get_data(user_id)
@@ -340,18 +348,19 @@ async def get_apartamets(alice_request):
             return alice_request.response(await get_prices(TO, 'camping', 'кемпинг') + "\nОткуда вы поедете")
 
 async def end_of_diolog(alice_request):
-    print("ABOBA1")
+    print("Вопрос о доп информации")
     user_id = alice_request.session.user_id
     await dp.storage.set_state(user_id, find.END)
     return "\n\nВам бы хотелось узнать еще что-то про погоду, местную кухню или интересные места. Я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране)."
 
 @dp.request_handler(state=find.END,commands=["билетик"])
 async def return_again(alice_request):
+    print("Вопрос о доп информации")
     return alice_request.response("\n\nВам бы хотелось узнать еще что-то про погоду, местную кухню или интересные места. Я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране).", tts="Вам бы хотелось узнать еще что-то про погоду, местную кухню или интересные места. Я могу помочь собрать чемодан и заодно поделиться интересными фактами об этом городе (стране).")
 
 @dp.request_handler(state=find.END)
 async def end_diolog(alice_request):
-    print("ABOBA2")
+    print("Дополнительная информация")
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=find.END)
 
@@ -362,16 +371,16 @@ async def end_diolog(alice_request):
         return alice_request.response("Ну тогда была рада помочь, обращайтесь",tts="Ну тогда была рада помочь, обращайтесь",end_session=True)
     else:
         if 'погод' in alice_request.request.original_utterance:
-            t["threads"][0][0].wait()
+            print("Поинтересовался местной погодой")
             return alice_request.response(t['threads'][0][1].get() + await end_of_diolog(alice_request))
         elif 'места' in alice_request.request.original_utterance:
-            print("ABOBA3")
+            print("Поинтересовался интересными местами")
             return alice_request.response(await get_places(TO) + await end_of_diolog(alice_request))
         elif 'кухн' in alice_request.request.original_utterance or 'ед' in alice_request.request.original_utterance or 'местн' in alice_request.request.original_utterance:
-            t["threads"][1][0].wait()
+            print("Поинтересовался местной кухней")
             return alice_request.response(t['threads'][1][1].get() + await end_of_diolog(alice_request))
         elif 'факт' in alice_request.request.original_utterance:
-            t["threads"][2][0].wait()
+            print("Поинтересовался интересными фактами")
             return alice_request.response(t['threads'][2][1].get() + await end_of_diolog(alice_request))
         # t["threads"][1][0].wait()
         # t['threads'][1][1].get()
@@ -381,14 +390,15 @@ async def handle_new_session(alice_request):
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id)
     logging.info(f'Initialized suggests for new session!\nuser_id is {user_id!r}')
+    print("Словил новую маслину")
     await dp.storage.set_state(user_id, how.GEO)
-    print("BOBA")
     text = 'Навык "Волшебный чемоданчик" поможет вам найти жилье, выбрать билеты, собрать вещи и узнать больше о том месте,куда вы направляетесь.\nВы можете задать вопрос: "Что ты умеешь?" для подробного описания функционала или сказать "Помощь" для того чтобы узнать, что делать дальше. Также вы всегда можете начать с самого начала с помощью фразы "Начать заново".\nТак куда и когда вы желаете поехать?'
     return alice_request.response_big_image(text,"1652229/d3e37933f0afdac28458", "Волшебный чемоданчик", text, tts=text)
 
 
 @dp.request_handler(state=find.TICKETS)
 async def get_tickets(alice_request):
+    print("Получение информации о билетах")
     if alice_request.request.nlu.entities[0].type == "YANDEX.GEO":
         user_id = alice_request.session.user_id
         await dp.storage.update_data(user_id, state=find.TICKETS)
@@ -417,6 +427,7 @@ async def get_tickets(alice_request):
 @dp.request_handler(state=find.END)
 @dp.request_handler(state=find.APARTAMENTS)
 async def dont_understood(alice_request):
+    print("Ничерта не поняла")
     return alice_request.response("Извините, я не совсем поняла, что вы сказали, повторите ещё раз")
 
 @dp.request_handler(commands=["я передумал","заверши"])
