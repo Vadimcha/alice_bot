@@ -121,12 +121,16 @@ async def repeat(alice_request):
 @dp.request_handler(state=how.GEO)
 async def main(alice_request):
     user_id = alice_request.session.user_id
-    await dp.storage.update_data(user_id, state=how.GEO)
+    await dp.storage.update_data(user_id, state=how.GEO)    
     try:
         geo_point = alice_request.request._raw_kwargs["nlu"]["entities"][0]["value"]
+        print(geo_point)
+        if "city" not in geo_point.keys() and "country" in geo_point.keys():
+            return alice_request.response("Укажите город, а не страну.\nОтветом отправьте полную строку с точкой прибытия и временем")
         await dp.storage.update_data(user_id, GEO=geo_point)
-    except:
-        return alice_request.response("Так куда вы хотите?",tts="Так куда вы хотите?")
+    except Exception as e:
+        print(e)
+        return alice_request.response("Так куда вы хотите?\nОтветом отправьте полную строку с точкой прибытия и временем",tts="Так куда вы хотите? Ответом Отправьте полную строку с точкой прибытия и временем")
     try:
         time = list(filter(lambda type: type['type'] == 'YANDEX.DATETIME', alice_request.request._raw_kwargs["nlu"]["entities"]))[0]["value"]
         time["year"] = datetime.now().strftime("%Y")
@@ -152,7 +156,7 @@ async def main(alice_request):
 
         await dp.storage.update_data(user_id, TIME=time)
     except IndexError:
-        return alice_request.response("Так когда вы хотите?", tts="Так когда вы хотите приехать?")
+        return alice_request.response("Так когда вы хотите?\nОтветом отправьте полную строку с точкой прибытия и временем", tts="Так когда вы хотите приехать? Ответом Отправьте полную строку с точкой прибытия и временем")
     await dp.storage.set_state(user_id, how.BILETS)
     data = await dp.storage.get_data(user_id)
     q1 = queue.Queue()
@@ -379,7 +383,8 @@ async def handle_new_session(alice_request):
     logging.info(f'Initialized suggests for new session!\nuser_id is {user_id!r}')
     await dp.storage.set_state(user_id, how.GEO)
     print("BOBA")
-    return alice_request.response_big_image('Здравствуйте, вас приветствует навык Волшебный чемоданчик, вы в любой момент можете сказать "Что ты умеешь", чтобы узнать весь функционал этого навыка или сказать "Начать заново", чтоюы начать заново в случае ошибки. \nТак куда и когда вы желаете поехать?',"1652229/d3e37933f0afdac28458","Волшебный чемоданчик",'Здравствуйте, вас приветствует навык Волшебный чемоданчик, вы в любой момент можете сказать "Что ты умеешь", чтобы узнать весь функционал этого навыка или сказать "Начать заново", чтоюы начать заново в случае ошибки. \nТак куда и когда вы желаете поехать?', tts='Здравствуйте, вас приветствует навык Волшебный чемоданчик, вы в любой момент можете сказать "Что ты умеешь", чтобы узнать весь функционал этого навыка. \nТак куда и когда вы желаете поехать?')
+    text = 'Навык "Волшебный чемоданчик" поможет вам найти жилье, выбрать билеты, собрать вещи и узнать больше о том месте,куда вы направляетесь.\nВы можете задать вопрос: "Что ты умеешь?" для подробного описания функционала или сказать "Помощь" для того чтобы узнать, что делать дальше. Также вы всегда можете начать с самого начала с помощью фразы "Начать заново".\nТак куда и когда вы желаете поехать?'
+    return alice_request.response_big_image(text,"1652229/d3e37933f0afdac28458", "Волшебный чемоданчик", text, tts=text)
 
 
 @dp.request_handler(state=find.TICKETS)
