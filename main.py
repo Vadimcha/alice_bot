@@ -129,6 +129,8 @@ async def main(alice_request):
         print(geo_point)
         if "city" not in geo_point.keys() and "country" in geo_point.keys():
             return alice_request.response("Укажите город, а не страну.\nОтветом отправьте полную строку с точкой прибытия и временем")
+        elif "city" not in geo_point.keys() and "country" not in geo_point.keys():
+            return alice_request.response("Я не смогла определить город, попробуйте ещё раз.\nОтветом отправьте полную строку с точкой прибытия и временем")
         await dp.storage.update_data(user_id, GEO=geo_point)
     except Exception as e:
         print(e)
