@@ -179,7 +179,7 @@ async def main(alice_request):
     t3.start()
     t4 = Thread(target=places, args=[data, event4, q4])
     t4.start()
-    t5 = Thread(target=chemodan, args=[data, event4, q5])
+    t5 = Thread(target=chemodan, args=[data, event5, q5])
     t5.start()
     await dp.storage.update_data(user_id, threads=[[event1, q1], [event2, q2], [event3, q3], [event4, q4], [event5, q5]])
     # task1 = asyncio.ensure_future(weather(dp,user_id))
@@ -377,50 +377,64 @@ async def end_diolog(alice_request):
         await dp.storage.reset_state(user_id,with_data=True)
         return alice_request.response("Ну тогда была рада помочь, обращайтесь",tts="Ну тогда была рада помочь, обращайтесь",end_session=True)
     else:
-        if 'погод' in alice_request.request.original_utterance:
+        if 'погод' in alice_request.request.command:
             print("Поинтересовался местной погодой")
             if "weather" in t.keys():
                 text = t["weather"]
             else:
-                try:
+                if t["threads"][0][0].is_set():
                     text = t['threads'][0][1].get()
                     await dp.storage.update_data(user_id, weather=text)
-                except:
+                else:
                     return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
             return alice_request.response(text + await end_of_diolog(alice_request))
-        elif 'места' in alice_request.request.original_utterance:
+        elif 'места' in alice_request.request.command:
             print("Поинтересовался интересными местами")
             if "places" in t.keys():
                 text = t["places"]
             else:
-                try:
+                if t["threads"][3][0].is_set():
                     text = t['threads'][3][1].get()
                     await dp.storage.update_data(user_id, places=text)
-                except:
+                else:
                     return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
             return alice_request.response(text + await end_of_diolog(alice_request))
-        elif 'кухн' in alice_request.request.original_utterance or 'ед' in alice_request.request.original_utterance or 'местн' in alice_request.request.original_utterance:
+        elif 'кухн' in alice_request.request.command or 'ед' in alice_request.request.command or 'местн' in alice_request.request.command:
             print("Поинтересовался местной кухней")
             if "cuisine" in t.keys():
                 text = t["cuisine"]
             else:
-                try:
+                if t["threads"][1][0].is_set():
                     text = t['threads'][1][1].get()
                     await dp.storage.update_data(user_id, cuisine=text)
-                except:
+                else:
                     return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
             return alice_request.response( text + await end_of_diolog(alice_request))
-        elif 'факт' in alice_request.request.original_utterance:
+        elif 'факт' in alice_request.request.command:
             print("Поинтересовался интересными фактами")
             if "facts" in t.keys():
                 text = t["facts"]
             else:
-                try:
+                if t["threads"][2][0].is_set():
                     text = t['threads'][2][1].get()
                     await dp.storage.update_data(user_id, facts=text)
-                except:
+                else:
                     return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
             return alice_request.response( text + await end_of_diolog(alice_request))
+        elif 'чемод' in alice_request.request.command or 'собр' in alice_request.request.command:
+            print("Захотел собрать чемодан")
+            if "suitcase" in t.keys():
+                text = t["suitcase"]
+            else:
+                if t["threads"][4][0].is_set():
+                    text = t['threads'][4][1].get()
+                    await dp.storage.update_data(user_id, suitcase=text)
+                else:
+                    return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
+            return alice_request.response( text + await end_of_diolog(alice_request))
+        else:
+            print("Ничерта не поняла")
+            return alice_request.response("Извините, я не совсем поняла, что вы сказали, повторите ещё раз")
         # t["threads"][1][0].wait()
         # t['threads'][1][1].get()
 
