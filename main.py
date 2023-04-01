@@ -6,7 +6,7 @@ from imports import *
 from pars_hotels import get_prices
 from get_tikcets import get_tikсets
 from get_places import get_places
-from weather_with_chatgpt import weather, local_food, facts
+from weather_with_chatgpt import weather, local_food, facts, places
 class how(Helper):
     mode = HelperMode.snake_case
     GEO = Item()
@@ -168,13 +168,17 @@ async def main(alice_request):
     event2 = Event()
     q3 = queue.Queue()
     event3 = Event()
-    t1 = Thread(target=weather,args=[data,event1,q1])
+    q4 = queue.Queue()
+    event4 = Event()
+    t1 = Thread(target=weather, args=[data, event1, q1])
     t1.start()
-    t2 = Thread(target=local_food,args=[data,event2,q2])
+    t2 = Thread(target=local_food, args=[data, event2, q2])
     t2.start()
     t3 = Thread(target=facts, args=[data, event3, q3])
     t3.start()
-    await dp.storage.update_data(user_id, threads=[[event1,q1],[event2,q2],[event3,q3]])
+    t4 = Thread(target=places, args=[data, event4, q4])
+    t4.start()
+    await dp.storage.update_data(user_id, threads=[[event1, q1], [event2, q2], [event3, q3], [event4, q4]])
     # task1 = asyncio.ensure_future(weather(dp,user_id))
     text = random.choice(have_tickets)
     return alice_request.response(text, buttons=but, tts=text)
@@ -380,7 +384,7 @@ async def end_diolog(alice_request):
             return alice_request.response(text + await end_of_diolog(alice_request))
         elif 'места' in alice_request.request.original_utterance:
             print("Поинтересовался интересными местами")
-            return alice_request.response(await get_places(TO) + await end_of_diolog(alice_request))
+            return alice_request.response(t['threads'][3][1].get() + await end_of_diolog(alice_request))
         elif 'кухн' in alice_request.request.original_utterance or 'ед' in alice_request.request.original_utterance or 'местн' in alice_request.request.original_utterance:
             print("Поинтересовался местной кухней")
             if "cuisine" in t.keys():
