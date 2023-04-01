@@ -182,7 +182,6 @@ async def main(alice_request):
 @dp.request_handler(state=how.BILETS, request_type=types.RequestType.BUTTON_PRESSED)
 async def Bilets(alice_request):
     print("Есть ли у пользователя билеты?")
-
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=how.BILETS)
     await dp.storage.update_data(user_id, BILETS=alice_request.request.payload)
@@ -364,6 +363,7 @@ async def end_diolog(alice_request):
     user_id = alice_request.session.user_id
     await dp.storage.update_data(user_id, state=find.END)
 
+    print(alice_request.request.command)
     t = await dp.storage.get_data(user_id)
     TO = t['GEO']["city"]
     if alice_request.request.command in negative:
@@ -372,16 +372,31 @@ async def end_diolog(alice_request):
     else:
         if 'погод' in alice_request.request.original_utterance:
             print("Поинтересовался местной погодой")
-            return alice_request.response(t['threads'][0][1].get() + await end_of_diolog(alice_request))
+            if "weather" in t.keys():
+                text = t["weather"]
+            else:
+                text = t['threads'][0][1].get()
+                await dp.storage.update_data(user_id, weather=text)
+            return alice_request.response(text + await end_of_diolog(alice_request))
         elif 'места' in alice_request.request.original_utterance:
             print("Поинтересовался интересными местами")
             return alice_request.response(await get_places(TO) + await end_of_diolog(alice_request))
         elif 'кухн' in alice_request.request.original_utterance or 'ед' in alice_request.request.original_utterance or 'местн' in alice_request.request.original_utterance:
             print("Поинтересовался местной кухней")
-            return alice_request.response(t['threads'][1][1].get() + await end_of_diolog(alice_request))
+            if "cuisine" in t.keys():
+                text = t["cuisine"]
+            else:
+                text = t['threads'][1][1].get()
+                await dp.storage.update_data(user_id, cuisine=text)
+            return alice_request.response( text + await end_of_diolog(alice_request))
         elif 'факт' in alice_request.request.original_utterance:
             print("Поинтересовался интересными фактами")
-            return alice_request.response(t['threads'][2][1].get() + await end_of_diolog(alice_request))
+            if "facts" in t.keys():
+                text = t["facts"]
+            else:
+                text = t['threads'][2][1].get()
+                await dp.storage.update_data(user_id, facts=text)
+            return alice_request.response( text + await end_of_diolog(alice_request))
         # t["threads"][1][0].wait()
         # t['threads'][1][1].get()
 
@@ -399,7 +414,7 @@ async def handle_new_session(alice_request):
 @dp.request_handler(state=find.TICKETS)
 async def get_tickets(alice_request):
     print("Получение информации о билетах")
-    if alice_request.request.nlu.entities[0].type == "YANDEX.GEO":
+    if alice_request.request.nlu.entities[0].type == "YANDEX.GEO": #ОБРАБОТАТЬ ЕСЛИ НИХРЕНА НЕ ПОЛУЧИЛ!!!!
         user_id = alice_request.session.user_id
         await dp.storage.update_data(user_id, state=find.TICKETS)
         FROM = alice_request.request.nlu.entities[0].value
