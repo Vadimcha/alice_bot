@@ -5,8 +5,7 @@ import dawg_python
 from imports import *
 from pars_hotels import get_prices
 from get_tikcets import get_tikсets
-from get_places import get_places
-from weather_with_chatgpt import weather, local_food, facts, places
+from weather_with_chatgpt import weather, local_food, facts, places, chemodan
 class how(Helper):
     mode = HelperMode.snake_case
     GEO = Item()
@@ -87,7 +86,7 @@ help = [
 answers_to_type = negative + type_of_housing
 
 have_tickets = ["А билеты есть?", "У вас уже есть билеты?", "Вы уже приобрели себе билеты?"]
-have_housing = ["А жильё есть?", "У вас уже есть жильё?", "Вы уже забранировали сеье жильё?", "Вы уже знаете, где будете жить?"]
+have_housing = ["А жильё есть?", "У вас уже есть жильё?", "Вы уже забранировали себе жильё?", "Вы уже знаете, где будете жить?"]
 help_with_housing = ["Вам помочь с жильём?", "Вам помочь найти жильё?", "Вам помочь с выбором жилья?"]
 help_with_tickets = ["Вам помочь с билетами?", "Вам помочь найти билеты?", "Вам помочь с выбором билетов?"]
 help_with_housing_and_tickets = ["Вам почь с билетами и жильём", "Вам помочь найти билеты и жильё?", "Вам помочь с выбором жилья и билетов?"]
@@ -170,6 +169,8 @@ async def main(alice_request):
     event3 = Event()
     q4 = queue.Queue()
     event4 = Event()
+    q5 = queue.Queue()
+    event5 = Event()
     t1 = Thread(target=weather, args=[data, event1, q1])
     t1.start()
     t2 = Thread(target=local_food, args=[data, event2, q2])
@@ -178,7 +179,9 @@ async def main(alice_request):
     t3.start()
     t4 = Thread(target=places, args=[data, event4, q4])
     t4.start()
-    await dp.storage.update_data(user_id, threads=[[event1, q1], [event2, q2], [event3, q3], [event4, q4]])
+    t5 = Thread(target=chemodan, args=[data, event4, q5])
+    t5.start()
+    await dp.storage.update_data(user_id, threads=[[event1, q1], [event2, q2], [event3, q3], [event4, q4], [event5, q5]])
     # task1 = asyncio.ensure_future(weather(dp,user_id))
     text = random.choice(have_tickets)
     return alice_request.response(text, buttons=but, tts=text)
