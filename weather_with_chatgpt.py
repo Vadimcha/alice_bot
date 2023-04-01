@@ -2,7 +2,7 @@ import openai
 import calendar
 import os
 from dotenv import load_dotenv
-load_dotenv(".env")
+load_dotenv("../.env")
 t1 = os.getenv("TOKEN-1")
 t2 = os.getenv("TOKEN-2")
 t3 = os.getenv("TOKEN-3")
