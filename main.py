@@ -503,27 +503,33 @@ async def dont_understood(alice_request):
     if data["SCHET"] == 0:
         await dp.storage.update_data(user_id, SCHET=1)
         return alice_request.response("Извините, я не совсем поняла, что вы сказали, повторите ещё раз")
+    elif data["SCHET"] == 1:
+        await dp.storage.update_data(user_id, SCHET=2)
+        match (data['state']):
+            case 'geo':
+                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет, на вопрос есть ли у вас билеты")
+            case 'tickets':
+                return alice_request.response("Я снова вас не поняла. Пожалуйста корректно введите место отъезда")
+            case 'bilets':
+                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет, на вопрос есть ли у вас жилье")
+            case 'sleep':
+                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет, на вопрос нужна ли вам помощь с билетами")
+            case 'branch_1':
+                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет")
+            case 'branch_2':
+                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет")
+            case 'branch_3':
+                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет")
+            case 'end':
+                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте нет или напишите одну из тем: погода, интересные факты, интересные места, собрать чемодан, местная кухня")
+            case 'apartaments':
+                return alice_request.response("ABOBA")
+    else:
+        if hasattr(alice_request.meta.interfaces, "screen"):
+            return alice_request.response("Извините, но я совсем вас не понимаю, попробуйте написать текстом")
+        else:
+            return alice_request.response("Извините, но я совсем вас не понимаю, попробуйте открыть приложение на устройстве с экраном и написать текстом")
 
-    print(data)
-    match (data['state']):
-        case 'geo':
-            return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет, на вопрос есть ли у вас билеты")
-        case 'tickets':
-            return alice_request.response("Я снова вас не поняла. Пожалуйста корректно введите место отъезда")
-        case 'bilets':
-            return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет, на вопрос есть ли у вас жилье")
-        case 'sleep':
-            return alice_request.response("фвыадывжаь")
-        case 'branch_1':
-            return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет")
-        case 'branch_2':
-            return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет")
-        case 'branch_3':
-            return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет")
-        case 'end':
-            return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте нет или напишите одну из тем: погода, интересные факты, интересные места, собрать чемодан, местная кухня")
-        case 'apartaments':
-            return alice_request.response("ABOBA")
 
 @dp.request_handler(commands=["я передумал","заверши"])
 async def exit(alice_request):
