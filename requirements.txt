@@ -7,3 +7,4 @@ deep_translator
 bs4
 pymorphy2
 pyshorteners
+python-dotenv

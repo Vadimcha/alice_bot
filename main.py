@@ -1,10 +1,8 @@
 import random
 
-import dawg_python
-
 from imports import *
 from pars_hotels import get_prices
-from get_tikcets import get_tikсets
+from get_tikcets import get_tikcets
 from weather_with_chatgpt import weather, local_food, facts, places, chemodan
 class how(Helper):
     mode = HelperMode.snake_case
@@ -91,6 +89,7 @@ help_with_housing = ["Вам помочь с жильём?", "Вам помоч�
 help_with_tickets = ["Вам помочь с билетами?", "Вам помочь найти билеты?", "Вам помочь с выбором билетов?"]
 help_with_housing_and_tickets = ["Вам почь с билетами и жильём", "Вам помочь найти билеты и жильё?", "Вам помочь с выбором жилья и билетов?"]
 help_text = "Я могу сориентировать вас по ценам на билеты и жильё. Также я могу рассказать много интересного про страну: различные факты, прогноз погоды, какие места стоит посетить и какую еду попробовать. Помимо этого, я могу подсказать, что нужно с собой взять. \n \nЧтобы продолжить работать ответьте на предыдущий вопрос"
+
 @dp.request_handler(state=find.TICKETS, commands=help)
 @dp.request_handler(state=how.GEO, commands=help)
 @dp.request_handler(state=how.BILETS, commands=help)
@@ -117,6 +116,7 @@ async def help(alice_request):
 @dp.request_handler(state=find.APARTAMENTS, commands=["Начать заново", "заново", "повторить"])
 async def repeat(alice_request):
     print("Перезапуск")
+    await dp.storage.reset_state(user_id=alice_request.session.user_id, with_data=True)
     return alice_request.response("Перезапустите навык в Алисе", end_session=True)
 
 @dp.request_handler(state=how.GEO)
@@ -399,7 +399,7 @@ async def end_diolog(alice_request):
                     text = t['threads'][0][1].get()
                     await dp.storage.update_data(user_id, weather=text)
                 else:
-                    return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
+                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
             return alice_request.response(text + await end_of_diolog(alice_request))
         elif 'места' in alice_request.request.command:
             await dp.storage.update_data(user_id, SCHET=0)
@@ -411,7 +411,7 @@ async def end_diolog(alice_request):
                     text = t['threads'][3][1].get()
                     await dp.storage.update_data(user_id, places=text)
                 else:
-                    return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
+                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
             return alice_request.response(text + await end_of_diolog(alice_request))
         elif 'кухн' in alice_request.request.command or 'ед' in alice_request.request.command or 'местн' in alice_request.request.command:
             await dp.storage.update_data(user_id, SCHET=0)
@@ -423,7 +423,7 @@ async def end_diolog(alice_request):
                     text = t['threads'][1][1].get()
                     await dp.storage.update_data(user_id, cuisine=text)
                 else:
-                    return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
+                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
             return alice_request.response( text + await end_of_diolog(alice_request))
         elif 'факт' in alice_request.request.command:
             await dp.storage.update_data(user_id, SCHET=0)
@@ -435,7 +435,7 @@ async def end_diolog(alice_request):
                     text = t['threads'][2][1].get()
                     await dp.storage.update_data(user_id, facts=text)
                 else:
-                    return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
+                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
             return alice_request.response( text + await end_of_diolog(alice_request))
         elif 'чемод' in alice_request.request.command or 'собр' in alice_request.request.command:
             await dp.storage.update_data(user_id, SCHET=0)
@@ -447,7 +447,7 @@ async def end_diolog(alice_request):
                     text = t['threads'][4][1].get()
                     await dp.storage.update_data(user_id, suitcase=text)
                 else:
-                    return alice_request.response("Извините. Ответ не готов повторите попытку позже, спросив про эту же категорию")
+                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
             return alice_request.response( text + await end_of_diolog(alice_request))
         else:
             raise SkipHandler
@@ -475,7 +475,7 @@ async def get_tickets(alice_request):
         FROM = alice_request.request.nlu.entities[0].value
 
         t = await dp.storage.get_data(user_id)
-        answer = await get_tikсets(t, FROM.city)
+        answer = await get_tikcets(t, FROM.city)
         try:
             text, button = answer
             return alice_request.response(text + await end_of_diolog(alice_request), buttons=[button])
@@ -531,4 +531,4 @@ async def exit(alice_request):
 
 if __name__ == '__main__':
     app = get_new_configured_app(dispatcher=dp, path=WEBHOOK_URL_PATH)
-    web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT, loop=dp.loop)
+    web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT, loop=dp.loop) #, ssl_context=ssl_context)
