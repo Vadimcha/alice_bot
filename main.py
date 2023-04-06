@@ -47,6 +47,9 @@ positive = [
     "а то как же",
     "йес",
     "есть",
+    "есть",
+    "yes",
+    "ес",
 ]
 negative = [
     "и в помине нет",
@@ -62,6 +65,8 @@ negative = [
     "нет, конечно",
     "нетушки",
     "ничуть",
+    "ничего подобного",
+    "no",
 ]
 answers = positive + negative
 
@@ -73,10 +78,13 @@ type_of_housing = [
     "кемпинг",
 ]
 
-help = [
-    'хелп',
+what_can_u_do = [
     'что ты умеешь',
     'что ты можешь',
+    ]
+help = [
+    'хелп',
+    'помощь',
 ]
 
 
@@ -87,8 +95,19 @@ have_tickets = ["А билеты есть?", "У вас уже есть биле
 have_housing = ["А жильё есть?", "У вас уже есть жильё?", "Вы уже забранировали себе жильё?", "Вы уже знаете, где будете жить?"]
 help_with_housing = ["Вам помочь с жильём?", "Вам помочь найти жильё?", "Вам помочь с выбором жилья?"]
 help_with_tickets = ["Вам помочь с билетами?", "Вам помочь найти билеты?", "Вам помочь с выбором билетов?"]
-help_with_housing_and_tickets = ["Вам почь с билетами и жильём", "Вам помочь найти билеты и жильё?", "Вам помочь с выбором жилья и билетов?"]
-help_text = "Я могу сориентировать вас по ценам на билеты и жильё. Также я могу рассказать много интересного про страну: различные факты, прогноз погоды, какие места стоит посетить и какую еду попробовать. Помимо этого, я могу подсказать, что нужно с собой взять. \n \nЧтобы продолжить работать ответьте на предыдущий вопрос"
+help_with_housing_and_tickets = ["Вам помочь с билетами и жильём", "Вам помочь найти билеты и жильё?", "Вам помочь с выбором жилья и билетов?"]
+help_text = ["Я могу сориентировать вас по ценам на билеты и жильё. Также я могу рассказать много интересного про страну: различные факты, прогноз погоды, какие места стоит посетить и какую еду попробовать. \
+              Помимо этого, я могу подсказать, что нужно с собой взять. \n \nЧтобы продолжить работать ответьте на предыдущий вопрос", \
+              "Я могу помочь вам узнать цены на билеты и жильё, а также поделиться множеством интересных фактов о стране, рассказать о прогнозе погоды, порекомендовать места для посещения и блюда, которые стоит попробовать. \
+                Кроме того, я могу советовать, что необходимо взять с собой."
+]
+
+@dp.request_handler()
+async def ping(alice_request):
+    if alice_request.request.original_utterance == "ping":
+        await alice_request.response("200")
+    else:
+        raise SkipHandler
 
 @dp.request_handler(state=find.TICKETS, commands=help)
 @dp.request_handler(state=how.GEO, commands=help)
@@ -99,21 +118,55 @@ help_text = "Я могу сориентировать вас по ценам н�
 @dp.request_handler(state=find.BRANCH_3, commands=help)
 @dp.request_handler(state=find.END, commands=help)
 @dp.request_handler(state=find.APARTAMENTS, commands=help)
-async def help(alice_request):
-    print("Помощь")
+async def helping(alice_request):
+    print("Что я могу")
     user_id = alice_request.session.user_id
-    return alice_request.response(help_text)
+    data = await dp.storage.get_data(user_id)
+    match (data['state']):
+            case 'geo':
+                return alice_request.response("Вам нужно ответить на вопрос есть ли у вас билеты")
+            case 'tickets':
+                return alice_request.response("Вам нужно написать откуда вы уезхжаете")
+            case 'bilets':
+                return alice_request.response("Вам нужно ответить на вопрос есть ли у вас жилье")
+            case 'sleep':
+                return alice_request.response("Вам нужно ответить нужна ли вам помощь с билетами")
+            case 'branch_1':
+                return alice_request.response("Вам нудно ответить нужна ли вам помощь с поиском жилья и билетов")
+            case 'branch_2':
+                return alice_request.response("Вам нужно ответить нужна ли вам помошь с поиском жилья")
+            case 'branch_3':
+                return alice_request.response("Вам нужно ответить нужна ли вам помошь с поиском жилья")
+            case 'end':
+                return alice_request.response("Вам нужно выбрать одну из тем: погода, интересные факты, интересные места, собрать чемодан, местная кухня, бронь билетов, и сказать об этом мне")
+            case 'apartaments':
+                return alice_request.response("Вам нужно выбрать одну из тем: погода, интересные факты, интересные места, собрать чемодан, местная кухня, бронь билетов, и сказать об этом мне")
 
 
-@dp.request_handler(state=find.TICKETS, commands=["Начать заново", "заново", "повторить"])
-@dp.request_handler(state=how.GEO, commands=["Начать заново", "заново", "повторить"])
-@dp.request_handler(state=how.BILETS, commands=["Начать заново", "заново", "повторить"])
-@dp.request_handler(state=how.SLEEP, commands=["Начать заново", "заново", "повторить"])
-@dp.request_handler(state=find.BRANCH_1, commands=["Начать заново", "заново", "повторить"])
-@dp.request_handler(state=find.BRANCH_2, commands=["Начать заново", "заново", "повторить"])
-@dp.request_handler(state=find.BRANCH_3, commands=["Начать заново", "заново", "повторить"])
-@dp.request_handler(state=find.END, commands=["Начать заново", "заново", "повторить"])
-@dp.request_handler(state=find.APARTAMENTS, commands=["Начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.TICKETS, commands=what_can_u_do)
+@dp.request_handler(state=how.GEO, commands=what_can_u_do)
+@dp.request_handler(state=how.BILETS, commands=what_can_u_do)
+@dp.request_handler(state=how.SLEEP, commands=what_can_u_do)
+@dp.request_handler(state=find.BRANCH_1, commands=what_can_u_do)
+@dp.request_handler(state=find.BRANCH_2, commands=what_can_u_do)
+@dp.request_handler(state=find.BRANCH_3, commands=what_can_u_do)
+@dp.request_handler(state=find.END, commands=what_can_u_do)
+@dp.request_handler(state=find.APARTAMENTS, commands=what_can_u_do)
+async def what_can_i_do(alice_request):
+    print("Что я могу")
+    user_id = alice_request.session.user_id
+    return alice_request.response(random.choice(help_text))
+
+
+@dp.request_handler(state=find.TICKETS, commands=["начать заново", "заново", "повторить"])
+@dp.request_handler(state=how.GEO, commands=["начать заново", "заново", "повторить"])
+@dp.request_handler(state=how.BILETS, commands=["начать заново", "заново", "повторить"])
+@dp.request_handler(state=how.SLEEP, commands=["начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.BRANCH_1, commands=["начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.BRANCH_2, commands=["начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.BRANCH_3, commands=["начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.END, commands=["начать заново", "заново", "повторить"])
+@dp.request_handler(state=find.APARTAMENTS, commands=["начать заново", "заново", "повторить"])
 async def repeat(alice_request):
     print("Перезапуск")
     await dp.storage.reset_state(user_id=alice_request.session.user_id, with_data=True)
@@ -128,13 +181,13 @@ async def main(alice_request):
         geo_point = alice_request.request._raw_kwargs["nlu"]["entities"][0]["value"]
         print(geo_point)
         if "city" not in geo_point.keys() and "country" in geo_point.keys():
-            return alice_request.response("Укажите город, а не страну.\nОтветом отправьте полную строку с точкой прибытия и временем")
+            return alice_request.response("Укажите город, а не страну.\nОтветом отправьте полную строку с местом и датой прибытия")
         elif "city" not in geo_point.keys() and "country" not in geo_point.keys():
-            return alice_request.response("Я не смогла определить город, попробуйте ещё раз.\nОтветом отправьте полную строку с точкой прибытия и временем")
+            return alice_request.response("Я не смогла определить город, попробуйте ещё раз.\nОтветом отправьте полную строку с местом и датой прибытия")
         await dp.storage.update_data(user_id, GEO=geo_point)
     except Exception as e:
         print(e)
-        return alice_request.response("Так куда вы хотите?\nОтветом отправьте полную строку с точкой прибытия и временем",tts="Так куда вы хотите? Ответом Отправьте полную строку с точкой прибытия и временем")
+        return alice_request.response("Так куда вы хотите?\nОтветом отправьте полную строку с местом и датой прибытия",tts="Так куда вы хотите? Ответом отправьте полную строку с местом и датой прибытия")
     try:
         time = list(filter(lambda type: type['type'] == 'YANDEX.DATETIME', alice_request.request._raw_kwargs["nlu"]["entities"]))[0]["value"]
         time["year"] = datetime.now().strftime("%Y")
@@ -296,7 +349,7 @@ async def branch_def(alice_request):
         return alice_request.response(await end_of_diolog(alice_request))
     await dp.storage.update_data(user_id, get_both=True)
     await dp.storage.set_state(user_id, find.APARTAMENTS)
-    return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга",tts="Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга")
+    return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам отели, хостелы, апартаменты, гостевые дома или кемпинги",tts="Какой вариант размещения вы предпочитаете? Мы можем предложить вам отели, хостелы, апартаменты, гостевые дома или кемпинги")
 
 @dp.request_handler(state=find.BRANCH_2, commands=answers)
 async def hotel(alice_request):
@@ -309,7 +362,7 @@ async def hotel(alice_request):
     await dp.storage.update_data(user_id, get_both=False)
 
     await dp.storage.set_state(user_id, find.APARTAMENTS)
-    return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга",tts="Какой вариант размещения вы предпочитаете? Мы можем предложить вам варианты отеля, хостела, апартаментов, гостевого дома или кемпинга")
+    return alice_request.response("Какой вариант размещения вы предпочитаете? Мы можем предложить вам отели, хостелы, апартаменты, гостевые дома или кемпинги",tts="Какой вариант размещения вы предпочитаете? Мы можем предложить вам отели, хостелы, апартаменты, гостевые дома или кемпинги")
 
 @dp.request_handler(state=find.BRANCH_3, commands=answers)
 async def from_where(alice_request):
@@ -329,39 +382,78 @@ async def get_apartamets(alice_request):
     print("Получение информации о жилье")
     await dp.storage.update_data(user_id, state=find.APARTAMENTS)
     t = await dp.storage.get_data(user_id)
+    q6 = queue.Queue()
+    event6 = Event()
+    
     print(t)
     TO = t['GEO']["city"]
     if not t["get_both"]:
-        if alice_request.request.command in negative:
-            return alice_request.response(end_of_diolog(alice_request))
-        elif "отел" in alice_request.request.command:
-            return alice_request.response(await get_prices(TO, 'hotel', 'отели') + await end_of_diolog(alice_request))
+        for i in alice_request.request.nlu.tokens:
+            if i in negative:
+                return alice_request.response(end_of_diolog(alice_request))
+        if "отел" in alice_request.request.command:
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'hotel', 'отели'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + await end_of_diolog(alice_request))
         elif "хостел" in alice_request.request.command:
-            return alice_request.response(await get_prices(TO, 'hostel', 'хостелы') + await end_of_diolog(alice_request))
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'hostel', 'хостелы'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + await end_of_diolog(alice_request))
         elif "апарт" in alice_request.request.command:
-            return alice_request.response(await get_prices(TO, 'apart', 'апартаменты') + await end_of_diolog(alice_request))
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'apart', 'апартаменты'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + await end_of_diolog(alice_request))
         elif "дом" in alice_request.request.command:
-            return alice_request.response(await get_prices(TO, 'guesthouse', 'номер в гостевом доме') + await end_of_diolog(alice_request))
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'guesthouse', 'номер в гостевом доме'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + await end_of_diolog(alice_request))
         elif "кемпинг" in alice_request.request.command:
-            return alice_request.response(await get_prices(TO, 'camping', 'кемпинг') + await end_of_diolog(alice_request))
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'camping', 'кемпинг'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + await end_of_diolog(alice_request))
+        else:
+            raise SkipHandler
     else:
-        if alice_request.request.command in negative:
-            return alice_request.response(end_of_diolog(alice_request))
-        elif "отел" in alice_request.request.command:
+        for i in alice_request.request.nlu.tokens:
+            if i in negative:
+                return alice_request.response(end_of_diolog(alice_request))
+        if "отел" in alice_request.request.command:
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'hotel', 'отели'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
             await dp.storage.set_state(user_id, find.TICKETS)
-            return alice_request.response(await get_prices(TO, 'hotel', 'отели') + "\nОткуда вы поедете")
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + "\nОткуда вы поедете")
         elif "хостел" in alice_request.request.command:
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'hostel', 'хостелы'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
             await dp.storage.set_state(user_id, find.TICKETS)
-            return alice_request.response(await get_prices(TO, 'hostel', 'хостелы') + "\nОткуда вы поедете")
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + "\nОткуда вы поедете")
         elif "апарт" in alice_request.request.command:
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'apart', 'апартаменты'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
             await dp.storage.set_state(user_id, find.TICKETS)
-            return alice_request.response(await get_prices(TO, 'apart', 'апартаменты') + "\nОткуда вы поедете")
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + "\nОткуда вы поедете")
         elif "дом" in alice_request.request.command:
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'guesthouse', 'номер в гостевом доме'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
             await dp.storage.set_state(user_id, find.TICKETS)
-            return alice_request.response(await get_prices(TO, 'guesthouse', 'номер в гостевом доме') + "\nОткуда вы поедете")
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + "\nОткуда вы поедете")
         elif "кемпинг" in alice_request.request.command:
+            t6 = Thread(target=get_prices, args=[event6, q6,t["TIME"],TO, 'camping', 'кемпинг'])
+            t6.start()
+            await dp.storage.update_data(user_id,threads=t["threads"] + [[event6,q6]])
             await dp.storage.set_state(user_id, find.TICKETS)
-            return alice_request.response(await get_prices(TO, 'camping', 'кемпинг') + "\nОткуда вы поедете")
+            return alice_request.response("Я отправила ваш запрос, но к сожалению вам придётся подождать, спустя минуту спросите меня про номер сказав: 'Расскажи про бронь'" + "\nОткуда вы поедете")
+        else:
+            raise SkipHandler
 
 async def end_of_diolog(alice_request):
     print("Вопрос о доп информации")
@@ -384,73 +476,85 @@ async def end_diolog(alice_request):
 
     print(alice_request.request.command)
     t = await dp.storage.get_data(user_id)
+    print(t)
     TO = t['GEO']["city"]
-    if alice_request.request.command in negative:
-        await dp.storage.reset_state(user_id,with_data=True)
-        return alice_request.response("Ну тогда была рада помочь, обращайтесь", tts="Ну тогда была рада помочь, обращайтесь", end_session=True)
-    else:
-        if 'погод' in alice_request.request.command:
-            await dp.storage.update_data(user_id, SCHET=0)
-            print("Поинтересовался местной погодой")
-            if "weather" in t.keys():
-                text = t["weather"]
-            else:
-                if t["threads"][0][0].is_set():
-                    text = t['threads'][0][1].get()
-                    await dp.storage.update_data(user_id, weather=text)
-                else:
-                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
-            return alice_request.response(text + await end_of_diolog(alice_request))
-        elif 'места' in alice_request.request.command:
-            await dp.storage.update_data(user_id, SCHET=0)
-            print("Поинтересовался интересными местами")
-            if "places" in t.keys():
-                text = t["places"]
-            else:
-                if t["threads"][3][0].is_set():
-                    text = t['threads'][3][1].get()
-                    await dp.storage.update_data(user_id, places=text)
-                else:
-                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
-            return alice_request.response(text + await end_of_diolog(alice_request))
-        elif 'кухн' in alice_request.request.command or 'ед' in alice_request.request.command or 'местн' in alice_request.request.command:
-            await dp.storage.update_data(user_id, SCHET=0)
-            print("Поинтересовался местной кухней")
-            if "cuisine" in t.keys():
-                text = t["cuisine"]
-            else:
-                if t["threads"][1][0].is_set():
-                    text = t['threads'][1][1].get()
-                    await dp.storage.update_data(user_id, cuisine=text)
-                else:
-                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
-            return alice_request.response( text + await end_of_diolog(alice_request))
-        elif 'факт' in alice_request.request.command:
-            await dp.storage.update_data(user_id, SCHET=0)
-            print("Поинтересовался интересными фактами")
-            if "facts" in t.keys():
-                text = t["facts"]
-            else:
-                if t["threads"][2][0].is_set():
-                    text = t['threads'][2][1].get()
-                    await dp.storage.update_data(user_id, facts=text)
-                else:
-                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
-            return alice_request.response( text + await end_of_diolog(alice_request))
-        elif 'чемод' in alice_request.request.command or 'собр' in alice_request.request.command:
-            await dp.storage.update_data(user_id, SCHET=0)
-            print("Захотел собрать чемодан")
-            if "suitcase" in t.keys():
-                text = t["suitcase"]
-            else:
-                if t["threads"][4][0].is_set():
-                    text = t['threads'][4][1].get()
-                    await dp.storage.update_data(user_id, suitcase=text)
-                else:
-                    return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
-            return alice_request.response( text + await end_of_diolog(alice_request))
+    for i in alice_request.request.nlu.tokens:
+        print(i)
+        if i in negative:
+            await dp.storage.reset_state(user_id,with_data=True)
+            return alice_request.response_big_image("Я была рада помочь, обращайтесь!", "213044/d4027ad94ee6dc17e228","Пока :c","Я была рада помочь, обращайтесь!",tts="Я была рада помочь, обращайтесь!", end_session=True)
+    if 'погод' in alice_request.request.command:
+        await dp.storage.update_data(user_id, SCHET=0)
+        print("Поинтересовался местной погодой")
+        if "weather" in t.keys():
+            text = t["weather"]
         else:
-            raise SkipHandler
+            if t["threads"][0][0].is_set():
+                text = t['threads'][0][1].get()
+                await dp.storage.update_data(user_id, weather=text)
+            else:
+                return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
+        return alice_request.response(text + await end_of_diolog(alice_request))
+    elif 'места' in alice_request.request.command:
+        await dp.storage.update_data(user_id, SCHET=0)
+        print("Поинтересовался интересными местами")
+        if "places" in t.keys():
+            text = t["places"]
+        else:
+            if t["threads"][3][0].is_set():
+                text = t['threads'][3][1].get()
+                await dp.storage.update_data(user_id, places=text)
+            else:
+                return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
+        return alice_request.response(text + await end_of_diolog(alice_request))
+    elif 'кухн' in alice_request.request.command or 'ед' in alice_request.request.command or 'местн' in alice_request.request.command:
+        await dp.storage.update_data(user_id, SCHET=0)
+        print("Поинтересовался местной кухней")
+        if "cuisine" in t.keys():
+            text = t["cuisine"]
+        else:
+            if t["threads"][1][0].is_set():
+                text = t['threads'][1][1].get()
+                await dp.storage.update_data(user_id, cuisine=text)
+            else:
+                return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
+        return alice_request.response( text + await end_of_diolog(alice_request))
+    elif 'факт' in alice_request.request.command:
+        await dp.storage.update_data(user_id, SCHET=0)
+        print("Поинтересовался интересными фактами")
+        if "facts" in t.keys():
+            text = t["facts"]
+        else:
+            if t["threads"][2][0].is_set():
+                text = t['threads'][2][1].get()
+                await dp.storage.update_data(user_id, facts=text)
+            else:
+                return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
+        return alice_request.response( text + await end_of_diolog(alice_request))
+    elif 'чемод' in alice_request.request.command or 'собр' in alice_request.request.command:
+        await dp.storage.update_data(user_id, SCHET=0)
+        print("Захотел собрать чемодан")
+        if "suitcase" in t.keys():
+            text = t["suitcase"]
+        else:
+            if t["threads"][4][0].is_set():
+                text = t['threads'][4][1].get()
+                await dp.storage.update_data(user_id, suitcase=text)
+            else:
+                return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив про эту же категорию")
+        return alice_request.response( text + await end_of_diolog(alice_request))
+    elif 'бронь' in alice_request.request.command:
+        if "book" in t.keys():
+            text = t["book"]
+        else:
+            if t["threads"][5][0].is_set():
+                text = t['threads'][5][1].get()
+                await dp.storage.update_data(user_id, book=text)
+            else:
+                return alice_request.response("Извините. Ответ не готов, повторите попытку позже, спросив снова рол бронь")
+        return alice_request.response( text[0] + await end_of_diolog(alice_request),buttons=[text[1]])
+    else:
+        raise SkipHandler
         # t["threads"][1][0].wait()
         # t['threads'][1][1].get()
 
@@ -507,23 +611,23 @@ async def dont_understood(alice_request):
         await dp.storage.update_data(user_id, SCHET=2)
         match (data['state']):
             case 'geo':
-                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет, на вопрос есть ли у вас билеты")
+                return alice_request.response("Я снова вас не поняла. Пожалуйста, ответьте да или нет, на вопрос есть ли у вас билеты")
             case 'tickets':
-                return alice_request.response("Я снова вас не поняла. Пожалуйста корректно введите место отъезда")
+                return alice_request.response("Я снова вас не поняла. Пожалуйста, корректно введите место отъезда")
             case 'bilets':
-                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет, на вопрос есть ли у вас жилье")
+                return alice_request.response("Я снова вас не поняла. Пожалуйста, ответьте да или нет, на вопрос есть ли у вас жилье")
             case 'sleep':
-                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет, на вопрос нужна ли вам помощь с билетами")
+                return alice_request.response("Я снова вас не поняла. Пожалуйста, ответьте да или нет, на вопрос нужна ли вам помощь с билетами")
             case 'branch_1':
-                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет")
+                return alice_request.response("Я снова вас не поняла. Пожалуйста, ответьте да или нет")
             case 'branch_2':
-                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет")
+                return alice_request.response("Я снова вас не поняла. Пожалуйста, ответьте да или нет")
             case 'branch_3':
-                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте да или нет")
+                return alice_request.response("Я снова вас не поняла. Пожалуйста, ответьте да или нет")
             case 'end':
-                return alice_request.response("Я снова вас не поняла. Пожалуйста ответьте нет или напишите одну из тем: погода, интересные факты, интересные места, собрать чемодан, местная кухня")
+                return alice_request.response("Я снова вас не поняла. Пожалуйста, скажите 'Нет' или напишите одну из тем: погода, интересные факты, интересные места, собрать чемодан, местная кухня, бронь билетов")
             case 'apartaments':
-                return alice_request.response("ABOBA")
+                return alice_request.response("Я снова вас не поняла. Пожалуйста, скажите 'Нет' или напишите одну из тем: погода, интересные факты, интересные места, собрать чемодан, местная кухня, бронь билетов")
     else:
         if hasattr(alice_request.meta.interfaces, "screen"):
             return alice_request.response("Извините, но я совсем вас не понимаю, попробуйте написать текстом")

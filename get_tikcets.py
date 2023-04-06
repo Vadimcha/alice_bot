@@ -10,9 +10,12 @@ get_iatas = "https://www.travelpayouts.com/widgets_suggest_params?q=из {} в {
 digits = [1,2,3,4,5,6,7,8,9]
 
 async def get_tikcets(data, city):
-    iatas = requests.get(get_iatas.format(city,data["GEO"]["city"])).json()
-    origin = iatas["origin"]["iata"]
-    destination = iatas["destination"]["iata"]
+    try:
+        iatas = requests.get(get_iatas.format(city,data["GEO"]["city"])).json()
+        origin = iatas["origin"]["iata"]
+        destination = iatas["destination"]["iata"]
+    except:
+        return "Не получилось найти билеты для вас"
     month = "0{}".format(data["TIME"]["month"]) if data["TIME"]["month"] in digits else data["TIME"]["month"]
     day = "0{}".format(data["TIME"]["day"]) if data["TIME"]["day"] in digits else data["TIME"]["day"]
     try:
