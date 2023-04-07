@@ -20,9 +20,13 @@ WEBHOOK_URL_PATH = ''  # webhook endpoint
 WEBAPP_HOST = '212.57.126.97'
 WEBAPP_PORT = 5000
 
+
+OAUTH_TOKEN = "y0_AgAAAAActKAOAAT7owAAAADgV2LrXnqbNJbVTLGOBkWB3-1OhdmazVo"
+SKILL_ID = "77bdccfe-350c-4bb3-a0e7-16dcbbc59681"
+
 logging.basicConfig(format=u'%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(asctime)s]  %(message)s', level=logging.INFO)
 
 # Создаем экземпляр диспетчера и подключаем хранилище в памяти
-dp = Dispatcher(storage=MemoryStorage())
+dp = Dispatcher(skill_id=SKILL_ID, oauth_token=OAUTH_TOKEN,storage=MemoryStorage(),)
 #ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
 #ssl_context.load_cert_chain('cert.pem','key.pem')
